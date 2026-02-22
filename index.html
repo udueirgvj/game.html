@@ -6,16 +6,12 @@
 body{
     margin:0;
     overflow:hidden;
-    background:#3cb043;
+    background:#222;
     touch-action:none;
 }
 
-/* شاشة اللعبة */
-canvas{
-    display:block;
-}
+canvas{ display:block; }
 
-/* عصا التحكم */
 #joystick{
     position:fixed;
     bottom:40px;
@@ -25,7 +21,6 @@ canvas{
     background:rgba(255,255,255,0.2);
     border-radius:50%;
 }
-
 #stick{
     position:absolute;
     left:35px;
@@ -35,109 +30,113 @@ canvas{
     background:white;
     border-radius:50%;
 }
-</style></head><body><canvas id="game"></canvas>
+</style></head><body>
+<canvas id="game"></canvas><div id="joystick"><div id="stick"></div></div><script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
 
-<div id="joystick">
-    <div id="stick"></div>
-</div><script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+/* حجم العالم (كبير جدا) */
+const WORLD_WIDTH=3000;
+const WORLD_HEIGHT=3000;
 
 /* اللاعب */
-let player = {
-    x: 300,
-    y: 300,
-    size: 40,
-    speed: 3
+let player={
+ x:1500,
+ y:1500,
+ size:40,
+ speed:4
 };
 
-/* الغزال */
-let deer = {
-    x: 700,
-    y: 400,
-    size: 35
+/* الكاميرا */
+let camera={
+ x:0,
+ y:0
 };
 
 /* الجويستك */
-const joystick = document.getElementById("joystick");
-const stick = document.getElementById("stick");
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+let dx=0,dy=0;
 
-let touchActive = false;
-let dx = 0;
-let dy = 0;
+joystick.addEventListener("touchmove",e=>{
+ const rect=joystick.getBoundingClientRect();
+ const t=e.touches[0];
 
-joystick.addEventListener("touchstart", e=>{
-    touchActive = true;
+ let x=t.clientX-rect.left-60;
+ let y=t.clientY-rect.top-60;
+
+ const dist=Math.hypot(x,y);
+ const max=40;
+
+ if(dist>max){x=x/dist*max;y=y/dist*max;}
+
+ stick.style.left=(x+60-25)+"px";
+ stick.style.top=(y+60-25)+"px";
+
+ dx=x/15;
+ dy=y/15;
 });
 
-joystick.addEventListener("touchmove", e=>{
-    const rect = joystick.getBoundingClientRect();
-    const touch = e.touches[0];
-
-    let x = touch.clientX - rect.left - 60;
-    let y = touch.clientY - rect.top - 60;
-
-    const dist = Math.sqrt(x*x + y*y);
-    const max = 40;
-
-    if(dist > max){
-        x = x/dist*max;
-        y = y/dist*max;
-    }
-
-    stick.style.left = (x+60-25)+"px";
-    stick.style.top = (y+60-25)+"px";
-
-    dx = x/20;
-    dy = y/20;
+joystick.addEventListener("touchend",()=>{
+ dx=0;dy=0;
+ stick.style.left="35px";
+ stick.style.top="35px";
 });
 
-joystick.addEventListener("touchend", e=>{
-    touchActive=false;
-    dx=0; dy=0;
-    stick.style.left="35px";
-    stick.style.top="35px";
-});
-
-/* حركة اللاعب */
+/* حركة اللاعب داخل العالم */
 function movePlayer(){
-    player.x += dx;
-    player.y += dy;
+ player.x+=dx;
+ player.y+=dy;
+
+ /* حدود العالم */
+ player.x=Math.max(0,Math.min(WORLD_WIDTH,player.x));
+ player.y=Math.max(0,Math.min(WORLD_HEIGHT,player.y));
 }
 
-/* الصيد */
-function checkHunt(){
-    let dist = Math.hypot(player.x-deer.x, player.y-deer.y);
-    if(dist<40){
-        deer.x=Math.random()*canvas.width;
-        deer.y=Math.random()*canvas.height;
-        alert("🐐 تم صيد الحيوان!");
-    }
+/* الكاميرا تتبع اللاعب */
+function updateCamera(){
+ camera.x=player.x-canvas.width/2;
+ camera.y=player.y-canvas.height/2;
+
+ camera.x=Math.max(0,Math.min(WORLD_WIDTH-canvas.width,camera.x));
+ camera.y=Math.max(0,Math.min(WORLD_HEIGHT-canvas.height,camera.y));
 }
 
-/* الرسم */
-function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+/* رسم العالم */
+function drawWorld(){
+ ctx.fillStyle="#3cb043";
+ ctx.fillRect(-camera.x,-camera.y,WORLD_WIDTH,WORLD_HEIGHT);
 
-    // اللاعب
-    ctx.fillStyle="blue";
-    ctx.fillRect(player.x,player.y,player.size,player.size);
-
-    // الحيوان
-    ctx.fillStyle="brown";
-    ctx.fillRect(deer.x,deer.y,deer.size,deer.size);
+ /* رسم أشجار تجريبية */
+ ctx.fillStyle="#1f7a2e";
+ for(let i=0;i<200;i++){
+   let tx=(i*173)%WORLD_WIDTH;
+   let ty=(i*389)%WORLD_HEIGHT;
+   ctx.beginPath();
+   ctx.arc(tx-camera.x,ty-camera.y,20,0,Math.PI*2);
+   ctx.fill();
+ }
 }
 
+/* رسم اللاعب */
+function drawPlayer(){
+ ctx.fillStyle="blue";
+ ctx.fillRect(player.x-camera.x,player.y-camera.y,player.size,player.size);
+}
+
+/* الحلقة الرئيسية */
 function loop(){
-    movePlayer();
-    checkHunt();
-    draw();
-    requestAnimationFrame(loop);
-}
+ ctx.clearRect(0,0,canvas.width,canvas.height);
 
+ movePlayer();
+ updateCamera();
+ drawWorld();
+ drawPlayer();
+
+ requestAnimationFrame(loop);
+}
 loop();
 </script></body>
 </html>
