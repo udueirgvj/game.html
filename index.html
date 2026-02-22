@@ -1,142 +1,33 @@
-<!DOCTYPE html><html lang="ar">
+<!DOCTYPE html>
+<html lang="ar">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لعبة الصياد</title><style>
-body{
-    margin:0;
-    overflow:hidden;
-    background:#222;
-    touch-action:none;
-}
-
-canvas{ display:block; }
-
-#joystick{
-    position:fixed;
-    bottom:40px;
-    left:40px;
-    width:120px;
-    height:120px;
-    background:rgba(255,255,255,0.2);
-    border-radius:50%;
-}
-#stick{
-    position:absolute;
-    left:35px;
-    top:35px;
-    width:50px;
-    height:50px;
-    background:white;
-    border-radius:50%;
-}
-</style></head><body>
-<canvas id="game"></canvas><div id="joystick"><div id="stick"></div></div><script>
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-
-/* حجم العالم (كبير جدا) */
-const WORLD_WIDTH=3000;
-const WORLD_HEIGHT=3000;
-
-/* اللاعب */
-let player={
- x:1500,
- y:1500,
- size:40,
- speed:4
-};
-
-/* الكاميرا */
-let camera={
- x:0,
- y:0
-};
-
-/* الجويستك */
-const joystick=document.getElementById("joystick");
-const stick=document.getElementById("stick");
-let dx=0,dy=0;
-
-joystick.addEventListener("touchmove",e=>{
- const rect=joystick.getBoundingClientRect();
- const t=e.touches[0];
-
- let x=t.clientX-rect.left-60;
- let y=t.clientY-rect.top-60;
-
- const dist=Math.hypot(x,y);
- const max=40;
-
- if(dist>max){x=x/dist*max;y=y/dist*max;}
-
- stick.style.left=(x+60-25)+"px";
- stick.style.top=(y+60-25)+"px";
-
- dx=x/15;
- dy=y/15;
-});
-
-joystick.addEventListener("touchend",()=>{
- dx=0;dy=0;
- stick.style.left="35px";
- stick.style.top="35px";
-});
-
-/* حركة اللاعب داخل العالم */
-function movePlayer(){
- player.x+=dx;
- player.y+=dy;
-
- /* حدود العالم */
- player.x=Math.max(0,Math.min(WORLD_WIDTH,player.x));
- player.y=Math.max(0,Math.min(WORLD_HEIGHT,player.y));
-}
-
-/* الكاميرا تتبع اللاعب */
-function updateCamera(){
- camera.x=player.x-canvas.width/2;
- camera.y=player.y-canvas.height/2;
-
- camera.x=Math.max(0,Math.min(WORLD_WIDTH-canvas.width,camera.x));
- camera.y=Math.max(0,Math.min(WORLD_HEIGHT-canvas.height,camera.y));
-}
-
-/* رسم العالم */
-function drawWorld(){
- ctx.fillStyle="#3cb043";
- ctx.fillRect(-camera.x,-camera.y,WORLD_WIDTH,WORLD_HEIGHT);
-
- /* رسم أشجار تجريبية */
- ctx.fillStyle="#1f7a2e";
- for(let i=0;i<200;i++){
-   let tx=(i*173)%WORLD_WIDTH;
-   let ty=(i*389)%WORLD_HEIGHT;
-   ctx.beginPath();
-   ctx.arc(tx-camera.x,ty-camera.y,20,0,Math.PI*2);
-   ctx.fill();
- }
-}
-
-/* رسم اللاعب */
-function drawPlayer(){
- ctx.fillStyle="blue";
- ctx.fillRect(player.x-camera.x,player.y-camera.y,player.size,player.size);
-}
-
-/* الحلقة الرئيسية */
-function loop(){
- ctx.clearRect(0,0,canvas.width,canvas.height);
-
- movePlayer();
- updateCamera();
- drawWorld();
- drawPlayer();
-
- requestAnimationFrame(loop);
-}
-loop();
-</script></body>
+    <meta charset="UTF-8">
+    <title>لعبة ثلاثية الأبعاد</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            font-family: Arial;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">استخدم WASD للتحرك | اضغط C لتبديل الكاميرا</div>
+    <!-- استيراد المكتبات -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.126.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.126.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="game.js"></script>
+</body>
 </html>
