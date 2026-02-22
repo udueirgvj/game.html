@@ -1,21 +1,45 @@
 <!DOCTYPE html><html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>لعبة الصياد</title>
-<style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لعبة الصياد</title><style>
 body{
     margin:0;
-    background:#87CEEB;
     overflow:hidden;
+    background:#3cb043;
+    touch-action:none;
 }
+
+/* شاشة اللعبة */
 canvas{
     display:block;
 }
-</style>
-</head>
-<body><canvas id="game"></canvas>
 
-<script>
+/* عصا التحكم */
+#joystick{
+    position:fixed;
+    bottom:40px;
+    left:40px;
+    width:120px;
+    height:120px;
+    background:rgba(255,255,255,0.2);
+    border-radius:50%;
+}
+
+#stick{
+    position:absolute;
+    left:35px;
+    top:35px;
+    width:50px;
+    height:50px;
+    background:white;
+    border-radius:50%;
+}
+</style></head><body><canvas id="game"></canvas>
+
+<div id="joystick">
+    <div id="stick"></div>
+</div><script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -27,67 +51,93 @@ let player = {
     x: 300,
     y: 300,
     size: 40,
-    speed: 4
+    speed: 3
 };
 
-/* التحكم */
-let keys = {};
-
-document.addEventListener("keydown", e => {
-    keys[e.key] = true;
-});
-document.addEventListener("keyup", e => {
-    keys[e.key] = false;
-});
-
-/* حيوان */
+/* الغزال */
 let deer = {
     x: 700,
     y: 400,
     size: 35
 };
 
+/* الجويستك */
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+
+let touchActive = false;
+let dx = 0;
+let dy = 0;
+
+joystick.addEventListener("touchstart", e=>{
+    touchActive = true;
+});
+
+joystick.addEventListener("touchmove", e=>{
+    const rect = joystick.getBoundingClientRect();
+    const touch = e.touches[0];
+
+    let x = touch.clientX - rect.left - 60;
+    let y = touch.clientY - rect.top - 60;
+
+    const dist = Math.sqrt(x*x + y*y);
+    const max = 40;
+
+    if(dist > max){
+        x = x/dist*max;
+        y = y/dist*max;
+    }
+
+    stick.style.left = (x+60-25)+"px";
+    stick.style.top = (y+60-25)+"px";
+
+    dx = x/20;
+    dy = y/20;
+});
+
+joystick.addEventListener("touchend", e=>{
+    touchActive=false;
+    dx=0; dy=0;
+    stick.style.left="35px";
+    stick.style.top="35px";
+});
+
+/* حركة اللاعب */
 function movePlayer(){
-    if(keys["ArrowUp"]) player.y -= player.speed;
-    if(keys["ArrowDown"]) player.y += player.speed;
-    if(keys["ArrowLeft"]) player.x -= player.speed;
-    if(keys["ArrowRight"]) player.x += player.speed;
+    player.x += dx;
+    player.y += dy;
 }
 
-/* التصادم (الصيد) */
+/* الصيد */
 function checkHunt(){
-    let dx = player.x - deer.x;
-    let dy = player.y - deer.y;
-    let distance = Math.sqrt(dx*dx + dy*dy);
-
-    if(distance < 40){
-        deer.x = Math.random()*canvas.width;
-        deer.y = Math.random()*canvas.height;
-        alert("لقد اصطدت الغزال!");
+    let dist = Math.hypot(player.x-deer.x, player.y-deer.y);
+    if(dist<40){
+        deer.x=Math.random()*canvas.width;
+        deer.y=Math.random()*canvas.height;
+        alert("🐐 تم صيد الحيوان!");
     }
 }
 
+/* الرسم */
 function draw(){
-    // أرض
-    ctx.fillStyle = "#3cb043";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
     // اللاعب
-    ctx.fillStyle = "blue";
-    ctx.fillRect(player.x, player.y, player.size, player.size);
+    ctx.fillStyle="blue";
+    ctx.fillRect(player.x,player.y,player.size,player.size);
 
     // الحيوان
-    ctx.fillStyle = "brown";
-    ctx.fillRect(deer.x, deer.y, deer.size, deer.size);
+    ctx.fillStyle="brown";
+    ctx.fillRect(deer.x,deer.y,deer.size,deer.size);
 }
 
-function gameLoop(){
+function loop(){
     movePlayer();
     checkHunt();
     draw();
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
 }
 
-gameLoop();
+loop();
 </script></body>
 </html>
