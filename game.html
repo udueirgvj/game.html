@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>لعبة الصياد</title>
+<style>
+body{
+    margin:0;
+    background:#87CEEB;
+    overflow:hidden;
+}
+canvas{
+    display:block;
+}
+</style>
+</head>
+<body><canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+/* اللاعب */
+let player = {
+    x: 300,
+    y: 300,
+    size: 40,
+    speed: 4
+};
+
+/* التحكم */
+let keys = {};
+
+document.addEventListener("keydown", e => {
+    keys[e.key] = true;
+});
+document.addEventListener("keyup", e => {
+    keys[e.key] = false;
+});
+
+/* حيوان */
+let deer = {
+    x: 700,
+    y: 400,
+    size: 35
+};
+
+function movePlayer(){
+    if(keys["ArrowUp"]) player.y -= player.speed;
+    if(keys["ArrowDown"]) player.y += player.speed;
+    if(keys["ArrowLeft"]) player.x -= player.speed;
+    if(keys["ArrowRight"]) player.x += player.speed;
+}
+
+/* التصادم (الصيد) */
+function checkHunt(){
+    let dx = player.x - deer.x;
+    let dy = player.y - deer.y;
+    let distance = Math.sqrt(dx*dx + dy*dy);
+
+    if(distance < 40){
+        deer.x = Math.random()*canvas.width;
+        deer.y = Math.random()*canvas.height;
+        alert("لقد اصطدت الغزال!");
+    }
+}
+
+function draw(){
+    // أرض
+    ctx.fillStyle = "#3cb043";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // اللاعب
+    ctx.fillStyle = "blue";
+    ctx.fillRect(player.x, player.y, player.size, player.size);
+
+    // الحيوان
+    ctx.fillStyle = "brown";
+    ctx.fillRect(deer.x, deer.y, deer.size, deer.size);
+}
+
+function gameLoop(){
+    movePlayer();
+    checkHunt();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script></body>
+</html>
