@@ -1,148 +1,136 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لعبة ثلاثية الأبعاد - متكاملة</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            touch-action: none;
-        }
-        #info {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            color: white;
-            background: rgba(0,0,0,0.5);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 10;
-            pointer-events: none;
-            backdrop-filter: blur(4px);
-        }
-        #cam-status {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            color: white;
-            background: rgba(0,0,0,0.5);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 10;
-            pointer-events: none;
-            backdrop-filter: blur(4px);
-        }
-        /* أزرار التحكم باللمس */
-        .touch-controls {
-            position: absolute;
-            bottom: 30px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            box-sizing: border-box;
-            z-index: 20;
-            pointer-events: none;
-        }
-        .wasd-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: auto;
-        }
-        .wasd-row {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
-        .ctrl-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 35px;
-            background: rgba(30, 30, 30, 0.7);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            color: white;
-            font-size: 28px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            transition: all 0.1s;
-            touch-action: manipulation;
-        }
-        .ctrl-btn:active, .ctrl-btn.active {
-            background: rgba(255, 255, 255, 0.8);
-            color: black;
-            transform: scale(0.9);
-        }
-        .camera-btn {
-            width: 80px;
-            height: 80px;
-            border-radius: 40px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            border: 2px solid #ffaa00;
-            color: #ffaa00;
-            font-size: 18px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: auto;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-        .camera-btn:active {
-            background: #ffaa00;
-            color: black;
-        }
-        @media (max-width: 600px) {
-            .ctrl-btn { width: 60px; height: 60px; font-size: 24px; }
-            .camera-btn { width: 70px; height: 70px; font-size: 16px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لعبة الصياد</title>
+
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    background:black;
+    font-family:Arial;
+    touch-action:none;
+}
+
+#info{
+    position:absolute;
+    top:20px;
+    left:20px;
+    color:white;
+    background:rgba(0,0,0,0.5);
+    padding:10px 18px;
+    border-radius:20px;
+    z-index:10;
+}
+
+/* الجويستك */
+#joystick{
+    position:absolute;
+    bottom:40px;
+    left:40px;
+    width:150px;
+    height:150px;
+    z-index:20;
+}
+</style>
 </head>
+
 <body>
-    <div id="info">🏜️ استخدم WASD للحركة</div>
-    <div id="cam-status">📷 كاميرا: خلفية</div>
 
-    <div class="touch-controls">
-        <div class="wasd-panel">
-            <div class="wasd-row">
-                <button class="ctrl-btn" id="btn-w">W</button>
-            </div>
-            <div class="wasd-row">
-                <button class="ctrl-btn" id="btn-a">A</button>
-                <button class="ctrl-btn" id="btn-s">S</button>
-                <button class="ctrl-btn" id="btn-d">D</button>
-            </div>
-        </div>
-        <button class="camera-btn" id="btn-c">C</button>
-    </div>
+<div id="info">حرّك الشخصية بالجويستك</div>
 
-    <!-- استيراد المكتبات -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
-            }
-        }
-    </script>
+<div id="joystick"></div>
 
-    <!-- استيراد ملفات اللعبة -->
-    <script type="module" src="player.js"></script>
+<script type="module">
+
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
+import { createGround } from "./ground.js";
+import { createPlayer, updatePlayer } from "./player.js";
+import { createSky } from "./sky.js";
+
+/* ===================== المشهد ===================== */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+
+/* ===================== الكاميرا ===================== */
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    5000
+);
+camera.position.set(0,5,10);
+
+/* ===================== الرندر ===================== */
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+/* ===================== الإضاءة ===================== */
+const sun = new THREE.DirectionalLight(0xffffff,2);
+sun.position.set(100,200,100);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+scene.add(sun);
+
+const ambient = new THREE.AmbientLight(0xffffff,0.4);
+scene.add(ambient);
+
+/* ===================== إنشاء العالم ===================== */
+createGround(scene);
+createSky(scene);
+const player = createPlayer(scene);
+
+/* ===================== تغيير حجم الشاشة ===================== */
+window.addEventListener("resize",()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+/* ===================== حلقة اللعبة ===================== */
+function animate(){
+    requestAnimationFrame(animate);
+    updatePlayer(camera);
+    renderer.render(scene,camera);
+}
+animate();
+
+</script>
+
+<!-- مكتبة الجويستك -->
+<script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.1/dist/nipplejs.min.js"></script>
+
+<script>
+/* الجويستك */
+const joystick = nipplejs.create({
+    zone: document.getElementById('joystick'),
+    mode: 'static',
+    position: { left: '75px', bottom: '75px' },
+    color: 'white',
+    size: 120
+});
+
+window.joyX = 0;
+window.joyY = 0;
+
+joystick.on('move', function(evt, data){
+    if(data.vector){
+        window.joyX = data.vector.x;
+        window.joyY = data.vector.y;
+    }
+});
+
+joystick.on('end', function(){
+    window.joyX = 0;
+    window.joyY = 0;
+});
+</script>
+
 </body>
 </html>
