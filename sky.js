@@ -1,32 +1,31 @@
 import * as THREE from 'three';
-import { Sky } from 'three/addons/objects/Sky.js';
 
 export function createSky(scene) {
-    const sky = new Sky();
-    sky.scale.setScalar(450);
-    scene.add(sky);
+    // لون السماء
+    scene.background = new THREE.Color(0x87CEEB);
 
-    const sun = new THREE.Vector3();
+    // إضاءة محيطة
+    const ambientLight = new THREE.AmbientLight(0x404060);
+    scene.add(ambientLight);
 
-    const parameters = {
-        elevation: 30,
-        azimuth: 180,
-        exposure: 0.5
-    };
+    // إضاءة شمسية
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+    sunLight.position.set(10, 20, 5);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 40;
+    sunLight.shadow.camera.left = -15;
+    sunLight.shadow.camera.right = 15;
+    sunLight.shadow.camera.top = 15;
+    sunLight.shadow.camera.bottom = -15;
+    scene.add(sunLight);
 
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    let renderTarget;
+    // إضاءة خلفية
+    const backLight = new THREE.DirectionalLight(0x446688, 0.5);
+    backLight.position.set(-5, 5, -10);
+    scene.add(backLight);
 
-    function updateSun() {
-        const phi = THREE.MathUtils.degToRad(90 - parameters.elevation);
-        const theta = THREE.MathUtils.degToRad(parameters.azimuth);
-        sun.setFromSphericalCoords(1, phi, theta);
-        sky.material.uniforms.sunPosition.value.copy(sun);
-        if (renderTarget !== undefined) renderTarget.dispose();
-        renderTarget = pmremGenerator.fromScene(scene);
-        scene.environment = renderTarget.texture;
-    }
-
-    updateSun();
-    // يمكن تحديث الشمس ديناميكياً بتغيير parameters.elevation مع الوقت
+    // اختيارياً: إضافة غيوم أو skybox لاحقاً
 }
