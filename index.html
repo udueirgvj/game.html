@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لعبة البقاء - غابة واقعية</title>
+    <title>لعبة الصحراء - بوبجي</title>
     <style>
         body {
             margin: 0;
@@ -39,7 +40,6 @@
             pointer-events: none;
             border: 1px solid rgba(255,255,255,0.3);
         }
-        /* أزرار التحكم باللمس */
         .touch-controls {
             position: absolute;
             bottom: 30px;
@@ -67,10 +67,10 @@
             width: 70px;
             height: 70px;
             border-radius: 35px;
-            background: rgba(30, 30, 30, 0.7);
+            background: rgba(50, 30, 10, 0.7);
             backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 215, 0, 0.6);
-            color: gold;
+            border: 2px solid #cd7f32; /* برونزي */
+            color: #ffd966;
             font-size: 28px;
             font-weight: bold;
             display: flex;
@@ -84,19 +84,19 @@
             text-shadow: 0 2px 5px black;
         }
         .ctrl-btn:active, .ctrl-btn.active {
-            background: rgba(255, 215, 0, 0.8);
-            color: black;
+            background: #cd7f32;
+            color: white;
             transform: scale(0.9);
-            border-color: white;
+            border-color: gold;
         }
         .camera-btn {
             width: 80px;
             height: 80px;
             border-radius: 40px;
-            background: rgba(50, 50, 150, 0.7);
+            background: rgba(100, 50, 20, 0.7);
             backdrop-filter: blur(10px);
-            border: 2px solid #00ffff;
-            color: cyan;
+            border: 2px solid #cd7f32;
+            color: #ffd966;
             font-size: 18px;
             font-weight: bold;
             display: flex;
@@ -109,8 +109,8 @@
             touch-action: manipulation;
         }
         .camera-btn:active {
-            background: rgba(0, 255, 255, 0.8);
-            color: black;
+            background: #cd7f32;
+            color: white;
         }
         @media (max-width: 600px) {
             .ctrl-btn { width: 60px; height: 60px; font-size: 24px; }
@@ -119,7 +119,7 @@
     </style>
 </head>
 <body>
-    <div id="info">🌲 لعبة البقاء في الغابة | WASD للحركة | C لتبديل الكاميرا</div>
+    <div id="info">🏜️ صحراء بوبجي | WASD للحركة | C لتبديل الكاميرا</div>
     <div id="cam-status">📷 كاميرا: خلفية</div>
 
     <div class="touch-controls">
@@ -149,24 +149,21 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { Sky } from 'three/addons/objects/Sky.js';
-        import { Water } from 'three/addons/objects/Water.js';
 
         // --- إعداد المشهد والرندر ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // سيتم استبداله بالسماء
-        scene.fog = new THREE.FogExp2(0x89b6b5, 0.002); // ضباب خفيف
+        scene.background = new THREE.Color(0x87CEEB); // سماء زرقاء فاتحة
+        scene.fog = new THREE.FogExp2(0xddaa88, 0.002); // ضباب خفيف بلون صحراوي
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.shadowMap.bias = 0.0001;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
+        renderer.toneMappingExposure = 1.3;
         document.body.appendChild(renderer.domElement);
 
-        // --- إعداد الكاميرات ---
+        // --- الكاميرات ---
         const cameraFollow = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         cameraFollow.position.set(5, 3, 7);
 
@@ -178,377 +175,376 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.maxPolarAngle = Math.PI / 2.2;
-        controls.enableZoom = true;
         controls.enabled = false;
 
-        // --- الإضاءة المحيطة (Hemisphere) لمحاكاة ضوء السماء والأرض ---
-        const hemiLight = new THREE.HemisphereLight(0x88ccff, 0x335511, 1.2);
-        scene.add(hemiLight);
+        // --- الإضاءة الصحراوية (شمس قوية) ---
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
 
-        // --- إضاءة شمسية ديناميكية (مع Sky) ---
-        const sunLight = new THREE.DirectionalLight(0xffeedd, 1.5);
+        const sunLight = new THREE.DirectionalLight(0xffcc88, 1.8);
+        sunLight.position.set(50, 60, 30);
         sunLight.castShadow = true;
         sunLight.shadow.mapSize.width = 2048;
         sunLight.shadow.mapSize.height = 2048;
         sunLight.shadow.camera.near = 1;
-        sunLight.shadow.camera.far = 80;
-        sunLight.shadow.camera.left = -30;
-        sunLight.shadow.camera.right = 30;
-        sunLight.shadow.camera.top = 30;
-        sunLight.shadow.camera.bottom = -30;
+        sunLight.shadow.camera.far = 120;
+        sunLight.shadow.camera.left = -40;
+        sunLight.shadow.camera.right = 40;
+        sunLight.shadow.camera.top = 40;
+        sunLight.shadow.camera.bottom = -40;
         sunLight.shadow.bias = -0.0005;
         sunLight.shadow.normalBias = 0.02;
         scene.add(sunLight);
 
-        // --- إعداد السماء (Sky) ---
-        const sky = new Sky();
-        sky.scale.setScalar(450);
-        scene.add(sky);
+        // إضاءة خلفية دافئة
+        const backLight = new THREE.DirectionalLight(0xffaa66, 0.5);
+        backLight.position.set(-30, 20, -40);
+        scene.add(backLight);
 
-        const skyUniforms = sky.material.uniforms;
-        skyUniforms['turbidity'].value = 10;   // تعكر
-        skyUniforms['rayleigh'].value = 2;     // تشتت
-        skyUniforms['mieCoefficient'].value = 0.005;
-        skyUniforms['mieDirectionalG'].value = 0.8;
-        
-        // --- أرضية واقعية مع نسيج عشب (استخدام نسيج من three.js examples) ---
+        // --- أرضية صحراوية (رملية) ---
         const textureLoader = new THREE.TextureLoader();
-        const grassColor = textureLoader.load('https://threejs.org/examples/textures/terrain/grass_01_diff_1k.jpg');
-        const grassNormal = textureLoader.load('https://threejs.org/examples/textures/terrain/grass_01_nor_gl_1k.jpg');
-        const grassRough = textureLoader.load('https://threejs.org/examples/textures/terrain/grass_01_rough_1k.jpg');
-        
-        grassColor.wrapS = THREE.RepeatWrapping;
-        grassColor.wrapT = THREE.RepeatWrapping;
-        grassColor.repeat.set(20, 20);
-        grassNormal.wrapS = THREE.RepeatWrapping;
-        grassNormal.wrapT = THREE.RepeatWrapping;
-        grassNormal.repeat.set(20, 20);
-        grassRough.wrapS = THREE.RepeatWrapping;
-        grassRough.wrapT = THREE.RepeatWrapping;
-        grassRough.repeat.set(20, 20);
+        // نسيج رمل من three.js examples
+        const sandColor = textureLoader.load('https://threejs.org/examples/textures/terrain/grass_01_diff_1k.jpg'); // مؤقت، لكن سنستخدم لوناً
+        // لكن لتبسيط الواقعية، نستخدم لونًا مع تضاريس بسيطة
+
+        // إنشاء أرضية كبيرة مع تموجات بسيطة (لتبدو ككثبان)
+        const groundGeo = new THREE.PlaneGeometry(200, 200, 64, 64);
+        // تعديل القمم لجعلها كثباناً خفيفة
+        const positionAttribute = groundGeo.attributes.position;
+        for (let i = 0; i < positionAttribute.count; i++) {
+            const x = positionAttribute.getX(i);
+            const y = positionAttribute.getY(i);
+            const z = positionAttribute.getZ(i);
+            // ارتفاع عشوائي بسيط
+            const wave = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 1.5 + Math.sin(x * 0.3) * 0.5;
+            positionAttribute.setY(i, wave);
+        }
+        groundGeo.computeVertexNormals();
 
         const groundMat = new THREE.MeshStandardMaterial({
-            map: grassColor,
-            normalMap: grassNormal,
-            roughnessMap: grassRough,
-            roughness: 0.7,
-            metalness: 0.1
+            color: 0xd2b48c, // لون رملي
+            roughness: 0.8,
+            emissive: 0x221100,
+            flatShading: false
         });
-
-        const groundGeo = new THREE.CircleGeometry(200, 64);
         const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = 0;
-        ground.receiveShadow = true;
-        scene.add(ground);
+        ground.rotation.x = -Math.PI / 2; // نسطحها لأننا عدلنا القمم يدويًا
+        // إعادة ضبط التدوير لأننا عدلنا القمم مباشرة، الأفضل نتركها مستوية ونضيف كثبانًا ككائنات منفصلة للتبسيط
+        // لكن سنبقيها مستوية مع نسيج رمل
+        
+        // إعادة إنشاء أرضية مستوية مع نسيج
+        const groundFlatGeo = new THREE.CircleGeometry(200, 64);
+        const groundFlatMat = new THREE.MeshStandardMaterial({ color: 0xc2a477, roughness: 0.9 });
+        const groundFlat = new THREE.Mesh(groundFlatGeo, groundFlatMat);
+        groundFlat.rotation.x = -Math.PI / 2;
+        groundFlat.position.y = 0;
+        groundFlat.receiveShadow = true;
+        scene.add(groundFlat);
 
-        // --- إضافة طبقة عشب صغيرة (كائنات متعددة باستخدام InstancedMesh) ---
-        const bladeGeo = new THREE.ConeGeometry(0.1, 0.4, 3);
-        const bladeMat = new THREE.MeshStandardMaterial({ color: 0x4a7a4a });
-        const bladeCount = 3000;
-        const instancedGrass = new THREE.InstancedMesh(bladeGeo, bladeMat, bladeCount);
-        instancedGrass.castShadow = true;
-        instancedGrass.receiveShadow = true;
-
-        const dummy = new THREE.Object3D();
-        for (let i = 0; i < bladeCount; i++) {
-            const radius = 30 + Math.random() * 70;
+        // --- كثبان رملية إضافية (للعشوائية) ---
+        for (let i = 0; i < 30; i++) {
+            const duneGeo = new THREE.ConeGeometry(2 + Math.random() * 4, 0.8 + Math.random() * 1.5, 8);
+            const duneMat = new THREE.MeshStandardMaterial({ color: 0xc9a87c });
+            const dune = new THREE.Mesh(duneGeo, duneMat);
             const angle = Math.random() * Math.PI * 2;
+            const radius = 20 + Math.random() * 60;
+            dune.position.set(Math.cos(angle) * radius, 0.2, Math.sin(angle) * radius);
+            dune.rotation.y = Math.random() * Math.PI;
+            dune.castShadow = true;
+            dune.receiveShadow = true;
+            scene.add(dune);
+        }
+
+        // --- ثيل جاف (أعشاب صحراوية) ---
+        const dryGrassMat = new THREE.MeshStandardMaterial({ color: 0xb89a6b });
+        const grassBladeGeo = new THREE.ConeGeometry(0.2, 0.6, 4);
+        for (let i = 0; i < 400; i++) {
+            const grass = new THREE.Mesh(grassBladeGeo, dryGrassMat);
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 5 + Math.random() * 80;
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
-            dummy.position.set(x, 0.2, z);
-            dummy.rotation.y = Math.random() * Math.PI;
-            dummy.scale.set(1, 0.8 + Math.random() * 0.7, 1);
-            dummy.updateMatrix();
-            instancedGrass.setMatrixAt(i, dummy.matrix);
+            grass.position.set(x, 0.3, z);
+            grass.rotation.y = Math.random() * Math.PI;
+            grass.castShadow = true;
+            grass.receiveShadow = true;
+            scene.add(grass);
         }
-        instancedGrass.instanceMatrix.needsUpdate = true;
-        scene.add(instancedGrass);
 
-        // --- إنشاء شخصية رئيسية مفصلة (بأسلوب realistic blocky) ---
-        function createCharacter() {
+        // --- شخصية رئيسية تشبه شخصيات بوبجي (تفاصيل أكثر) ---
+        function createPUBGCharacter() {
             const group = new THREE.Group();
 
             // مواد
             const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.4 });
-            const pantsMat = new THREE.MeshStandardMaterial({ color: 0x3a5f8a, roughness: 0.6 });
-            const shirtMat = new THREE.MeshStandardMaterial({ color: 0xaa5533, roughness: 0.5 });
-            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-            const hairMat = new THREE.MeshStandardMaterial({ color: 0x4a2c1a });
+            const shirtMat = new THREE.MeshStandardMaterial({ color: 0x6b4c3b, roughness: 0.7 }); // زي عسكري بني
+            const pantsMat = new THREE.MeshStandardMaterial({ color: 0x4a3c31, roughness: 0.8 });
+            const bootsMat = new THREE.MeshStandardMaterial({ color: 0x2c1e10 });
+            const helmetMat = new THREE.MeshStandardMaterial({ color: 0x3a5f3a }); // خوذة عسكرية
+            const vestMat = new THREE.MeshStandardMaterial({ color: 0x4a5f3a });
+            const gunMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
 
-            // الجسم
-            const bodyGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.4);
-            const body = new THREE.Mesh(bodyGeo, shirtMat);
-            body.castShadow = true;
-            body.receiveShadow = true;
-            body.position.y = 0.9;
-            group.add(body);
+            // الجسم الرئيسي (صدر)
+            const torsoGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.2);
+            const torso = new THREE.Mesh(torsoGeo, vestMat);
+            torso.castShadow = true;
+            torso.receiveShadow = true;
+            torso.position.y = 1.2;
+            group.add(torso);
 
             // الرأس
-            const headGeo = new THREE.SphereGeometry(0.5, 24);
+            const headGeo = new THREE.SphereGeometry(0.45, 16);
             const head = new THREE.Mesh(headGeo, skinMat);
             head.castShadow = true;
             head.receiveShadow = true;
-            head.position.y = 1.8;
+            head.position.y = 2.1;
             group.add(head);
 
-            // عيون
-            const eyeGeo = new THREE.SphereGeometry(0.1, 8);
+            // خوذة/قبعة
+            const helmetGeo = new THREE.ConeGeometry(0.5, 0.3, 8);
+            const helmet = new THREE.Mesh(helmetGeo, helmetMat);
+            helmet.position.y = 2.4;
+            helmet.castShadow = true;
+            helmet.receiveShadow = true;
+            group.add(helmet);
+
+            // عينان
+            const eyeGeo = new THREE.SphereGeometry(0.08, 6);
+            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
             const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-            eyeL.position.set(-0.2, 1.95, 0.45);
+            eyeL.position.set(-0.15, 2.2, 0.4);
             group.add(eyeL);
             const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-            eyeR.position.set(0.2, 1.95, 0.45);
+            eyeR.position.set(0.15, 2.2, 0.4);
             group.add(eyeR);
 
-            // قبعة أو شعر
-            const hairGeo = new THREE.ConeGeometry(0.45, 0.3, 8);
-            const hair = new THREE.Mesh(hairGeo, hairMat);
-            hair.position.set(0, 2.15, 0);
-            hair.rotation.x = 0.1;
-            group.add(hair);
+            // الفك السفلي (بسيط)
+            const jawGeo = new THREE.BoxGeometry(0.3, 0.1, 0.2);
+            const jaw = new THREE.Mesh(jawGeo, skinMat);
+            jaw.position.set(0, 2.0, 0.45);
+            group.add(jaw);
 
             // الأرجل
             const legGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.0);
             const legL = new THREE.Mesh(legGeo, pantsMat);
             legL.castShadow = true;
             legL.receiveShadow = true;
-            legL.position.set(-0.25, 0.5, 0);
+            legL.position.set(-0.3, 0.6, 0);
             group.add(legL);
             const legR = new THREE.Mesh(legGeo, pantsMat);
             legR.castShadow = true;
             legR.receiveShadow = true;
-            legR.position.set(0.25, 0.5, 0);
+            legR.position.set(0.3, 0.6, 0);
             group.add(legR);
 
+            // أحذية
+            const bootGeo = new THREE.BoxGeometry(0.3, 0.2, 0.5);
+            const bootL = new THREE.Mesh(bootGeo, bootsMat);
+            bootL.castShadow = true;
+            bootL.receiveShadow = true;
+            bootL.position.set(-0.3, 0.1, 0.1);
+            group.add(bootL);
+            const bootR = new THREE.Mesh(bootGeo, bootsMat);
+            bootR.castShadow = true;
+            bootR.receiveShadow = true;
+            bootR.position.set(0.3, 0.1, 0.1);
+            group.add(bootR);
+
             // الذراعان
-            const armGeo = new THREE.CylinderGeometry(0.2, 0.2, 1.1);
-            const armL = new THREE.Mesh(armGeo, skinMat);
+            const armGeo = new THREE.CylinderGeometry(0.2, 0.2, 1.0);
+            const armL = new THREE.Mesh(armGeo, shirtMat);
             armL.castShadow = true;
             armL.receiveShadow = true;
-            armL.position.set(-0.65, 1.2, 0);
+            armL.position.set(-0.7, 1.5, 0);
             armL.rotation.z = 0.2;
             group.add(armL);
-            const armR = new THREE.Mesh(armGeo, skinMat);
+            const armR = new THREE.Mesh(armGeo, shirtMat);
             armR.castShadow = true;
             armR.receiveShadow = true;
-            armR.position.set(0.65, 1.2, 0);
+            armR.position.set(0.7, 1.5, 0);
             armR.rotation.z = -0.2;
             group.add(armR);
+
+            // بندقية بسيطة (على الظهر)
+            const gunGroup = new THREE.Group();
+            const gunBodyGeo = new THREE.BoxGeometry(0.1, 0.1, 1.0);
+            const gunBody = new THREE.Mesh(gunBodyGeo, gunMat);
+            gunBody.position.set(0, 0, 0);
+            gunGroup.add(gunBody);
+            const gunHandleGeo = new THREE.BoxGeometry(0.15, 0.3, 0.1);
+            const gunHandle = new THREE.Mesh(gunHandleGeo, gunMat);
+            gunHandle.position.set(0, 0.2, 0.3);
+            gunGroup.add(gunHandle);
+            gunGroup.position.set(0.4, 1.5, -0.4);
+            gunGroup.rotation.x = 0.5;
+            gunGroup.rotation.y = -0.3;
+            group.add(gunGroup);
 
             return group;
         }
 
-        const player = createCharacter();
+        const player = createPUBGCharacter();
         player.position.set(0, 0.5, 0);
         player.castShadow = true;
         player.receiveShadow = true;
         scene.add(player);
 
-        // --- إنشاء الأشجار الواقعية ---
-        function createRealisticTree(x, z) {
+        // --- أشجار نخيل صحراوية واقعية ---
+        function createPalmTree(x, z) {
             const group = new THREE.Group();
 
-            // مواد
-            const barkMat = new THREE.MeshStandardMaterial({ color: 0x6b4c3b, roughness: 0.8 });
-            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.4, emissive: 0x112211 });
-
-            // جذع رئيسي (أسطوانة)
-            const trunkGeo = new THREE.CylinderGeometry(0.8, 1.2, 5);
-            const trunk = new THREE.Mesh(trunkGeo, barkMat);
+            // جذع النخيل (طويل ومنحني قليلاً)
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B, roughness: 0.9 });
+            const trunkGeo = new THREE.CylinderGeometry(0.7, 1.0, 6);
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
             trunk.castShadow = true;
             trunk.receiveShadow = true;
-            trunk.position.y = 2.5;
+            trunk.position.y = 3;
+            trunk.rotation.z = 0.1; // انحناء طفيف
             group.add(trunk);
 
-            // فروع (أسطوانات صغيرة مائلة)
-            const branchGeo = new THREE.CylinderGeometry(0.3, 0.4, 2);
-            
-            const branch1 = new THREE.Mesh(branchGeo, barkMat);
-            branch1.castShadow = true;
-            branch1.receiveShadow = true;
-            branch1.position.set(0.8, 3.5, 0.5);
-            branch1.rotation.z = 0.4;
-            branch1.rotation.x = 0.3;
-            group.add(branch1);
+            // أوراق النخيل (عدة مخاريط خضراء حول القمة)
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.6 });
+            const leafGeo = new THREE.ConeGeometry(1.2, 2.5, 6);
 
-            const branch2 = new THREE.Mesh(branchGeo, barkMat);
-            branch2.castShadow = true;
-            branch2.receiveShadow = true;
-            branch2.position.set(-0.7, 4.0, -0.6);
-            branch2.rotation.z = -0.3;
-            branch2.rotation.x = -0.2;
-            group.add(branch2);
+            for (let i = 0; i < 6; i++) {
+                const leaf = new THREE.Mesh(leafGeo, leafMat);
+                leaf.castShadow = true;
+                leaf.receiveShadow = true;
+                leaf.position.set(0, 6, 0);
+                leaf.rotation.y = (i / 6) * Math.PI * 2;
+                leaf.rotation.z = 0.5; // مائل للخارج
+                leaf.rotation.x = 0.3;
+                group.add(leaf);
+            }
 
-            // أوراق الشجر (كرات متعددة)
-            const leafGeo = new THREE.SphereGeometry(1.0, 7);
-            
-            const leaf1 = new THREE.Mesh(leafGeo, leafMat);
-            leaf1.castShadow = true;
-            leaf1.receiveShadow = true;
-            leaf1.position.set(0, 5.5, 0);
-            leaf1.scale.set(1.5, 1.2, 1.5);
-            group.add(leaf1);
-
-            const leaf2 = new THREE.Mesh(leafGeo, leafMat);
-            leaf2.castShadow = true;
-            leaf2.receiveShadow = true;
-            leaf2.position.set(0.8, 4.8, 0.8);
-            leaf2.scale.set(1.2, 1.0, 1.2);
-            group.add(leaf2);
-
-            const leaf3 = new THREE.Mesh(leafGeo, leafMat);
-            leaf3.castShadow = true;
-            leaf3.receiveShadow = true;
-            leaf3.position.set(-0.9, 4.5, -0.7);
-            leaf3.scale.set(1.2, 1.0, 1.2);
-            group.add(leaf3);
-
-            const leaf4 = new THREE.Mesh(leafGeo, leafMat);
-            leaf4.castShadow = true;
-            leaf4.receiveShadow = true;
-            leaf4.position.set(0.5, 6.0, -0.5);
-            leaf4.scale.set(1.1, 0.9, 1.1);
-            group.add(leaf4);
+            // أوراق إضافية صغيرة
+            const smallLeafGeo = new THREE.ConeGeometry(0.8, 1.8, 5);
+            for (let i = 0; i < 4; i++) {
+                const leaf2 = new THREE.Mesh(smallLeafGeo, leafMat);
+                leaf2.castShadow = true;
+                leaf2.receiveShadow = true;
+                leaf2.position.set(0, 5.2, 0);
+                leaf2.rotation.y = (i / 4) * Math.PI * 2 + 0.5;
+                leaf2.rotation.z = 0.6;
+                group.add(leaf2);
+            }
 
             group.position.set(x, 0, z);
             return group;
         }
 
-        // إضافة غابة كثيفة
-        for (let i = 0; i < 40; i++) {
+        // إضافة نخيل في الصحراء
+        for (let i = 0; i < 25; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const radius = 10 + Math.random() * 40;
+            const radius = 15 + Math.random() * 50;
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
-            const tree = createRealisticTree(x, z);
-            scene.add(tree);
+            const palm = createPalmTree(x, z);
+            scene.add(palm);
         }
 
-        // --- إضافة حيوانات (غزال وأرنب) ---
-        function createDeer(x, z) {
+        // --- حيوانات صحراوية: جمل وثعبان ---
+        function createCamel(x, z) {
             const group = new THREE.Group();
-            const brownMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
-            const lightBrownMat = new THREE.MeshStandardMaterial({ color: 0xC19A6B });
+            const camelMat = new THREE.MeshStandardMaterial({ color: 0xc99a6b, roughness: 0.7 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x7a4d2e });
 
             // جسم
-            const bodyGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.2);
-            const body = new THREE.Mesh(bodyGeo, brownMat);
+            const bodyGeo = new THREE.CylinderGeometry(0.8, 0.8, 1.8);
+            const body = new THREE.Mesh(bodyGeo, camelMat);
             body.castShadow = true;
             body.receiveShadow = true;
-            body.position.y = 0.8;
+            body.position.y = 1.0;
             body.rotation.z = 0.1;
             group.add(body);
 
             // رأس
-            const headGeo = new THREE.SphereGeometry(0.4);
-            const head = new THREE.Mesh(headGeo, lightBrownMat);
+            const headGeo = new THREE.SphereGeometry(0.5);
+            const head = new THREE.Mesh(headGeo, camelMat);
             head.castShadow = true;
             head.receiveShadow = true;
-            head.position.set(0.6, 1.2, 0.3);
+            head.position.set(1.2, 1.6, 0);
             group.add(head);
+
+            // أذنان صغيرتان
+            const earGeo = new THREE.ConeGeometry(0.2, 0.4);
+            const earL = new THREE.Mesh(earGeo, darkMat);
+            earL.position.set(0.8, 2.0, 0.3);
+            group.add(earL);
+            const earR = new THREE.Mesh(earGeo, darkMat);
+            earR.position.set(0.8, 2.0, -0.3);
+            group.add(earR);
+
+            // سنام
+            const humpGeo = new THREE.ConeGeometry(0.7, 0.9);
+            const hump = new THREE.Mesh(humpGeo, darkMat);
+            hump.position.set(-0.2, 1.7, 0);
+            hump.rotation.x = 0.2;
+            group.add(hump);
 
             // أرجل
-            const legGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.8);
+            const legGeo = new THREE.CylinderGeometry(0.3, 0.3, 1.0);
             for (let i = 0; i < 4; i++) {
-                const leg = new THREE.Mesh(legGeo, brownMat);
+                const leg = new THREE.Mesh(legGeo, camelMat);
                 leg.castShadow = true;
                 leg.receiveShadow = true;
-                leg.position.set(i < 2 ? -0.4 : 0.4, 0.4, i % 2 === 0 ? 0.3 : -0.3);
+                const xOff = i < 2 ? -0.6 : 0.6;
+                const zOff = i % 2 === 0 ? 0.5 : -0.5;
+                leg.position.set(xOff, 0.5, zOff);
                 group.add(leg);
             }
-
-            // قرون (بسيطة)
-            const hornGeo = new THREE.ConeGeometry(0.1, 0.6);
-            const hornMat = new THREE.MeshStandardMaterial({ color: 0x5a3e2b });
-            const hornL = new THREE.Mesh(hornGeo, hornMat);
-            hornL.position.set(0.2, 1.6, 0.2);
-            hornL.rotation.z = -0.3;
-            group.add(hornL);
-            const hornR = new THREE.Mesh(hornGeo, hornMat);
-            hornR.position.set(0.2, 1.6, -0.1);
-            hornR.rotation.z = -0.3;
-            group.add(hornR);
-
-            group.position.set(x, 0.2, z);
-            return group;
-        }
-
-        function createRabbit(x, z) {
-            const group = new THREE.Group();
-            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5 });
-            const pinkMat = new THREE.MeshStandardMaterial({ color: 0xffaaaa });
-
-            const body = new THREE.Mesh(new THREE.SphereGeometry(0.5), whiteMat);
-            body.castShadow = true;
-            body.receiveShadow = true;
-            body.position.y = 0.4;
-            group.add(body);
-
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), whiteMat);
-            head.castShadow = true;
-            head.receiveShadow = true;
-            head.position.set(0, 0.8, 0.4);
-            group.add(head);
-
-            const earGeo = new THREE.ConeGeometry(0.15, 0.6);
-            const earL = new THREE.Mesh(earGeo, pinkMat);
-            earL.position.set(-0.15, 1.1, 0.3);
-            earL.rotation.z = -0.2;
-            group.add(earL);
-            const earR = new THREE.Mesh(earGeo, pinkMat);
-            earR.position.set(0.15, 1.1, 0.3);
-            earR.rotation.z = 0.2;
-            group.add(earR);
 
             group.position.set(x, 0, z);
             return group;
         }
 
-        const deer1 = createDeer(12, 8);
-        const deer2 = createDeer(-8, 15);
-        const rabbit1 = createRabbit(5, -6);
-        const rabbit2 = createRabbit(-10, -12);
-        scene.add(deer1);
-        scene.add(deer2);
-        scene.add(rabbit1);
-        scene.add(rabbit2);
+        function createSnake(x, z) {
+            const group = new THREE.Group();
+            const snakeMat = new THREE.MeshStandardMaterial({ color: 0x5d8c6b, roughness: 0.5 });
 
-        // --- إضافة بحيرة صغيرة (ماء) ---
-        const waterGeometry = new THREE.CircleGeometry(15, 32);
-        const water = new Water(waterGeometry, {
-            textureWidth: 512,
-            textureHeight: 512,
-            waterNormals: textureLoader.load('https://threejs.org/examples/textures/water/Water_1_M_Normal.jpg'),
-            sunDirection: new THREE.Vector3(1, 1, 1),
-            sunColor: 0xffaa88,
-            waterColor: 0x336699,
-            distortionScale: 3.7,
-            fog: true
-        });
-        water.rotation.x = -Math.PI / 2;
-        water.position.set(20, 0.1, 20);
-        water.receiveShadow = true;
-        scene.add(water);
+            // جسم ثعبان بسيط (كرات متصلة)
+            for (let i = 0; i < 5; i++) {
+                const segment = new THREE.Mesh(new THREE.SphereGeometry(0.3 + i*0.02, 6), snakeMat);
+                segment.castShadow = true;
+                segment.receiveShadow = true;
+                segment.position.set(i * 0.4, 0.2, 0);
+                group.add(segment);
+            }
+            // رأس
+            const head = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.6), snakeMat);
+            head.position.set(1.8, 0.25, 0);
+            head.rotation.z = Math.PI / 2;
+            group.add(head);
 
-        // --- تحريك الشمس والسماء حسب الوقت (تأثير نهاري) ---
-        let sunAngle = 0;
-
-        function updateSun() {
-            sunAngle += 0.001;
-            const sunPos = new THREE.Vector3(
-                Math.cos(sunAngle) * 80,
-                Math.sin(sunAngle) * 80 + 20,
-                50
-            );
-            sunLight.position.copy(sunPos);
-            skyUniforms['sunPosition'].value.copy(sunPos);
+            group.position.set(x, 0, z);
+            group.rotation.y = Math.random() * Math.PI;
+            return group;
         }
 
-        // --- التحكم بالشخصية (WASD) للوحة المفاتيح واللمس ---
+        const camel1 = createCamel(25, 10);
+        const camel2 = createCamel(-20, 30);
+        const snake1 = createSnake(5, -15);
+        scene.add(camel1);
+        scene.add(camel2);
+        scene.add(snake1);
+
+        // --- بعض الصخور لتزيين الصحراء ---
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x7a6a5a, roughness: 0.9 });
+        for (let i = 0; i < 40; i++) {
+            const rockGeo = new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.8);
+            const rock = new THREE.Mesh(rockGeo, rockMat);
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 8 + Math.random() * 40;
+            rock.position.set(Math.cos(angle) * radius, 0.3, Math.sin(angle) * radius);
+            rock.castShadow = true;
+            rock.receiveShadow = true;
+            scene.add(rock);
+        }
+
+        // --- التحكم بالشخصية (مثل السابق) ---
         const keyState = { w: false, a: false, s: false, d: false };
 
-        // لوحة المفاتيح
         window.addEventListener('keydown', (e) => {
             if (e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD' || e.code === 'KeyC') {
                 e.preventDefault();
@@ -613,7 +609,7 @@
                 activeCamera === cameraFollow ? '📷 كاميرا: خلفية' : '📷 كاميرا: حرة';
         });
 
-        // نسخ لأحداث الفأرة (للكمبيوتر)
+        // نسخ للفأرة
         btnW.addEventListener('mousedown', (e) => { e.preventDefault(); keyState.w = true; setActive(btnW, true); });
         btnW.addEventListener('mouseup', (e) => { e.preventDefault(); keyState.w = false; setActive(btnW, false); });
         btnW.addEventListener('mouseleave', (e) => { keyState.w = false; setActive(btnW, false); });
@@ -634,7 +630,7 @@
                 activeCamera === cameraFollow ? '📷 كاميرا: خلفية' : '📷 كاميرا: حرة';
         });
 
-        // --- حلقة اللعبة الرئيسية ---
+        // --- حلقة اللعبة ---
         const clock = new THREE.Clock();
 
         function animate() {
@@ -642,7 +638,7 @@
             const elapsedTime = performance.now() / 1000;
 
             // حركة الشخصية
-            const speed = 0.2;
+            const speed = 0.25;
             if (keyState.w) player.position.z -= speed;
             if (keyState.s) player.position.z += speed;
             if (keyState.a) player.position.x -= speed;
@@ -657,17 +653,10 @@
                 controls.update();
             }
 
-            // تحريك الحيوانات (حركة بسيطة)
-            deer1.position.y = 0.2 + Math.sin(elapsedTime * 3) * 0.05;
-            deer2.position.y = 0.2 + Math.cos(elapsedTime * 4) * 0.05;
-            rabbit1.position.y = Math.sin(elapsedTime * 5) * 0.1;
-            rabbit2.position.y = Math.cos(elapsedTime * 6) * 0.1;
-
-            // تحديث الشمس
-            updateSun();
-
-            // تحديث الماء
-            water.material.uniforms['time'].value += delta;
+            // حركة الحيوانات البسيطة (ارتفاع طفيف)
+            camel1.position.y = 0.5 + Math.sin(elapsedTime * 2) * 0.05;
+            camel2.position.y = 0.5 + Math.cos(elapsedTime * 3) * 0.05;
+            snake1.rotation.y += 0.005;
 
             renderer.render(scene, activeCamera);
             requestAnimationFrame(animate);
@@ -684,7 +673,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        console.log('🌲 لعبة البقاء جاهزة!');
+        console.log('🏜️ لعبة الصحراء جاهزة!');
     </script>
 </body>
 </html>
