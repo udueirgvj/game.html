@@ -1,56 +1,71 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/loaders/GLTFLoader.js";
 
-let player, mixer;
-let keys = {};
+let player = null;
+let mixer = null;
+let walkAction = null;
 
 export function createPlayer(scene){
 
     const loader = new GLTFLoader();
 
-    loader.load("Soldier.glb", function(gltf){
+    // ⭐ مهم: لأن الملف خارج مجلد ga
+    loader.load("../Soldier.glb", function(gltf){
 
         player = gltf.scene;
         player.scale.set(2,2,2);
         player.position.set(0,0,0);
 
+        // الظلال
         player.traverse(function(obj){
             if(obj.isMesh){
                 obj.castShadow = true;
+                obj.receiveShadow = true;
             }
         });
 
         scene.add(player);
 
+        // الانيميشن (المشي)
         mixer = new THREE.AnimationMixer(player);
-        const action = mixer.clipAction(gltf.animations[0]);
-        action.play();
+        walkAction = mixer.clipAction(gltf.animations[0]);
+        walkAction.play();
     });
-
-    // لوحة المفاتيح
-    window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-    window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
     return player;
 }
+
 
 export function updatePlayer(camera){
 
     if(!player) return;
 
-    let speed = 0.12;
+    let speed = 0.15;
 
-    if(keys["w"]) player.position.z -= speed;
-    if(keys["s"]) player.position.z += speed;
-    if(keys["a"]) player.position.x -= speed;
-    if(keys["d"]) player.position.x += speed;
+    // قراءة الجويستك من index.html
+    let moveX = window.joyX || 0;
+    let moveY = window.joyY || 0;
 
-    // كاميرا شخص ثالث (خلف اللاعب)
-    camera.position.x = player.position.x + 6;
-    camera.position.y = player.position.y + 5;
-    camera.position.z = player.position.z + 8;
+    // حركة اللاعب
+    player.position.x += moveX * speed;
+    player.position.z -= moveY * speed;
 
-    camera.lookAt(player.position);
+    // دوران باتجاه الحركة
+    if(moveX !== 0 || moveY !== 0){
+        let angle = Math.atan2(moveX, moveY);
+        player.rotation.y = angle;
+    }
 
+    // كاميرا شخص ثالث خلف اللاعب
+    const distance = 8;
+    const height = 5;
+
+    const camX = player.position.x + Math.sin(player.rotation.y) * distance;
+    const camZ = player.position.z + Math.cos(player.rotation.y) * distance;
+
+    camera.position.set(camX, player.position.y + height, camZ);
+    camera.lookAt(player.position.x, player.position.y + 2, player.position.z);
+
+    // تحديث الانيميشن
     if(mixer) mixer.update(0.016);
 }
