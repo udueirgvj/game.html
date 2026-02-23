@@ -1,26 +1,28 @@
 import * as THREE from 'three';
 
 export function setupLighting(scene) {
-    // إضاءة محيطة
-    const ambientLight = new THREE.AmbientLight(0x404060);
-    scene.add(ambientLight);
+    // إضاءة محيطة من السماء والأرض
+    const hemiLight = new THREE.HemisphereLight(0x88ccff, 0x335522, 1);
+    scene.add(hemiLight);
 
-    // إضاءة اتجاهية رئيسية
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(20, 30, 10);
-    directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 1024;
-    directionalLight.shadow.mapSize.height = 1024;
-    directionalLight.shadow.camera.near = 0.5;
-    directionalLight.shadow.camera.far = 50;
-    directionalLight.shadow.camera.left = -20;
-    directionalLight.shadow.camera.right = 20;
-    directionalLight.shadow.camera.top = 20;
-    directionalLight.shadow.camera.bottom = -20;
-    scene.add(directionalLight);
+    // إضاءة شمسية اتجاهية
+    const sunLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+    sunLight.position.set(30, 40, 20);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 80;
+    sunLight.shadow.camera.left = -30;
+    sunLight.shadow.camera.right = 30;
+    sunLight.shadow.camera.top = 30;
+    sunLight.shadow.camera.bottom = -30;
+    sunLight.shadow.bias = -0.0005;
+    sunLight.shadow.normalBias = 0.02;
+    scene.add(sunLight);
 
     // إضاءة خلفية ناعمة
-    const backLight = new THREE.DirectionalLight(0x446688, 0.5);
-    backLight.position.set(-10, 10, -10);
-    scene.add(backLight);
+    const fillLight = new THREE.DirectionalLight(0x446688, 0.5);
+    fillLight.position.set(-20, 10, -20);
+    scene.add(fillLight);
 }
