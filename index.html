@@ -3,29 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لعبة ثلاثية الأبعاد - متوافقة مع الهاتف</title>
+    <title>لعبة البقاء - غابة واقعية</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
-            touch-action: none; /* منع التمرير واللمس المتعدد */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
         }
         #info {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 15px;
+            left: 15px;
             color: white;
-            background: rgba(0,0,0,0.5);
-            padding: 8px 12px;
-            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 30px;
             font-size: 14px;
+            backdrop-filter: blur(5px);
             z-index: 10;
             pointer-events: none;
-            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.3);
         }
-        /* حاوية الأزرار */
-        .controls {
+        #cam-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        /* أزرار التحكم باللمس */
+        .touch-controls {
             position: absolute;
             bottom: 30px;
             left: 0;
@@ -37,10 +52,9 @@
             z-index: 20;
             pointer-events: none;
         }
-        .wasd {
+        .wasd-panel {
             display: flex;
             flex-direction: column;
-            align-items: center;
             gap: 8px;
             pointer-events: auto;
         }
@@ -52,74 +66,64 @@
         .ctrl-btn {
             width: 70px;
             height: 70px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.25);
-            backdrop-filter: blur(8px);
-            border: 2px solid rgba(255,255,255,0.5);
-            color: white;
+            border-radius: 35px;
+            background: rgba(30, 30, 30, 0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 215, 0, 0.6);
+            color: gold;
             font-size: 28px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            transition: background 0.1s;
+            transition: all 0.1s;
             touch-action: manipulation;
+            text-shadow: 0 2px 5px black;
         }
-        .ctrl-btn.active {
-            background: rgba(255,255,255,0.6);
-            color: #333;
-            transform: scale(0.95);
+        .ctrl-btn:active, .ctrl-btn.active {
+            background: rgba(255, 215, 0, 0.8);
+            color: black;
+            transform: scale(0.9);
+            border-color: white;
         }
         .camera-btn {
             width: 80px;
             height: 80px;
             border-radius: 40px;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(8px);
-            border: 2px solid rgba(255,255,255,0.6);
-            color: white;
-            font-size: 20px;
+            background: rgba(50, 50, 150, 0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid #00ffff;
+            color: cyan;
+            font-size: 18px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
             pointer-events: auto;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
-        /* تنسيق للهواتف الصغيرة */
+        .camera-btn:active {
+            background: rgba(0, 255, 255, 0.8);
+            color: black;
+        }
         @media (max-width: 600px) {
             .ctrl-btn { width: 60px; height: 60px; font-size: 24px; }
-            .camera-btn { width: 70px; height: 70px; font-size: 18px; }
-        }
-        /* مؤشر الكاميرا النشطة */
-        #cam-indicator {
-            position: absolute;
-            top: 60px;
-            right: 10px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 15;
-            pointer-events: none;
-            backdrop-filter: blur(4px);
+            .camera-btn { width: 70px; height: 70px; font-size: 16px; }
         }
     </style>
 </head>
 <body>
-    <div id="info">👤 حرك الشخصية | اضغط C لتبديل الكاميرا</div>
-    <div id="cam-indicator">🎥 كاميرا: خلفية</div>
+    <div id="info">🌲 لعبة البقاء في الغابة | WASD للحركة | C لتبديل الكاميرا</div>
+    <div id="cam-status">📷 كاميرا: خلفية</div>
 
-    <!-- أزرار التحكم باللمس -->
-    <div class="controls">
-        <div class="wasd">
+    <div class="touch-controls">
+        <div class="wasd-panel">
             <div class="wasd-row">
                 <button class="ctrl-btn" id="btn-w">W</button>
             </div>
@@ -136,195 +140,363 @@
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.126.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.126.0/examples/jsm/"
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
             }
         }
     </script>
 
     <script type="module">
-        // ----- إعداد المشهد الأساسي -----
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { Sky } from 'three/addons/objects/Sky.js';
+        import { Water } from 'three/addons/objects/Water.js';
 
+        // --- إعداد المشهد والرندر ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xaaccff); // سماء فاتحة
+        scene.background = new THREE.Color(0x87CEEB); // سيتم استبداله بالسماء
+        scene.fog = new THREE.FogExp2(0x89b6b5, 0.002); // ضباب خفيف
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.bias = 0.0001;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
         document.body.appendChild(renderer.domElement);
 
-        // ----- إضاءة -----
-        const ambientLight = new THREE.AmbientLight(0x404060);
-        scene.add(ambientLight);
+        // --- إعداد الكاميرات ---
+        const cameraFollow = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        cameraFollow.position.set(5, 3, 7);
 
-        const sunLight = new THREE.DirectionalLight(0xffeedd, 1.2);
-        sunLight.position.set(20, 30, 10);
+        const cameraFree = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        cameraFree.position.set(15, 10, 20);
+
+        let activeCamera = cameraFollow;
+        const controls = new OrbitControls(cameraFree, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2.2;
+        controls.enableZoom = true;
+        controls.enabled = false;
+
+        // --- الإضاءة المحيطة (Hemisphere) لمحاكاة ضوء السماء والأرض ---
+        const hemiLight = new THREE.HemisphereLight(0x88ccff, 0x335511, 1.2);
+        scene.add(hemiLight);
+
+        // --- إضاءة شمسية ديناميكية (مع Sky) ---
+        const sunLight = new THREE.DirectionalLight(0xffeedd, 1.5);
         sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 1024;
-        sunLight.shadow.mapSize.height = 1024;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
         sunLight.shadow.camera.near = 1;
-        sunLight.shadow.camera.far = 50;
-        sunLight.shadow.camera.left = -20;
-        sunLight.shadow.camera.right = 20;
-        sunLight.shadow.camera.top = 20;
-        sunLight.shadow.camera.bottom = -20;
+        sunLight.shadow.camera.far = 80;
+        sunLight.shadow.camera.left = -30;
+        sunLight.shadow.camera.right = 30;
+        sunLight.shadow.camera.top = 30;
+        sunLight.shadow.camera.bottom = -30;
+        sunLight.shadow.bias = -0.0005;
+        sunLight.shadow.normalBias = 0.02;
         scene.add(sunLight);
 
-        // ----- أرضية مع شبكة -----
-        const gridHelper = new THREE.GridHelper(40, 20, 0x888888, 0x444444);
-        scene.add(gridHelper);
+        // --- إعداد السماء (Sky) ---
+        const sky = new Sky();
+        sky.scale.setScalar(450);
+        scene.add(sky);
 
-        const groundGeo = new THREE.PlaneGeometry(40, 40);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x5a8c5a, side: THREE.DoubleSide });
+        const skyUniforms = sky.material.uniforms;
+        skyUniforms['turbidity'].value = 10;   // تعكر
+        skyUniforms['rayleigh'].value = 2;     // تشتت
+        skyUniforms['mieCoefficient'].value = 0.005;
+        skyUniforms['mieDirectionalG'].value = 0.8;
+        
+        // --- أرضية واقعية مع نسيج عشب (استخدام نسيج من three.js examples) ---
+        const textureLoader = new THREE.TextureLoader();
+        const grassColor = textureLoader.load('https://threejs.org/examples/textures/terrain/grass_01_diff_1k.jpg');
+        const grassNormal = textureLoader.load('https://threejs.org/examples/textures/terrain/grass_01_nor_gl_1k.jpg');
+        const grassRough = textureLoader.load('https://threejs.org/examples/textures/terrain/grass_01_rough_1k.jpg');
+        
+        grassColor.wrapS = THREE.RepeatWrapping;
+        grassColor.wrapT = THREE.RepeatWrapping;
+        grassColor.repeat.set(20, 20);
+        grassNormal.wrapS = THREE.RepeatWrapping;
+        grassNormal.wrapT = THREE.RepeatWrapping;
+        grassNormal.repeat.set(20, 20);
+        grassRough.wrapS = THREE.RepeatWrapping;
+        grassRough.wrapT = THREE.RepeatWrapping;
+        grassRough.repeat.set(20, 20);
+
+        const groundMat = new THREE.MeshStandardMaterial({
+            map: grassColor,
+            normalMap: grassNormal,
+            roughnessMap: grassRough,
+            roughness: 0.7,
+            metalness: 0.1
+        });
+
+        const groundGeo = new THREE.CircleGeometry(200, 64);
         const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = Math.PI / 2;
+        ground.rotation.x = -Math.PI / 2;
         ground.position.y = 0;
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // ----- شخصية مفصلة (إنسان بسيط) -----
+        // --- إضافة طبقة عشب صغيرة (كائنات متعددة باستخدام InstancedMesh) ---
+        const bladeGeo = new THREE.ConeGeometry(0.1, 0.4, 3);
+        const bladeMat = new THREE.MeshStandardMaterial({ color: 0x4a7a4a });
+        const bladeCount = 3000;
+        const instancedGrass = new THREE.InstancedMesh(bladeGeo, bladeMat, bladeCount);
+        instancedGrass.castShadow = true;
+        instancedGrass.receiveShadow = true;
+
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < bladeCount; i++) {
+            const radius = 30 + Math.random() * 70;
+            const angle = Math.random() * Math.PI * 2;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            dummy.position.set(x, 0.2, z);
+            dummy.rotation.y = Math.random() * Math.PI;
+            dummy.scale.set(1, 0.8 + Math.random() * 0.7, 1);
+            dummy.updateMatrix();
+            instancedGrass.setMatrixAt(i, dummy.matrix);
+        }
+        instancedGrass.instanceMatrix.needsUpdate = true;
+        scene.add(instancedGrass);
+
+        // --- إنشاء شخصية رئيسية مفصلة (بأسلوب realistic blocky) ---
         function createCharacter() {
             const group = new THREE.Group();
 
-            // الأرجل (أسطوانات زرقاء)
-            const legMat = new THREE.MeshStandardMaterial({ color: 0x3366cc });
-            const legGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.9);
-            
-            const legLeft = new THREE.Mesh(legGeo, legMat);
-            legLeft.castShadow = true;
-            legLeft.receiveShadow = true;
-            legLeft.position.set(-0.25, 0.45, 0);
-            group.add(legLeft);
-            
-            const legRight = new THREE.Mesh(legGeo, legMat);
-            legRight.castShadow = true;
-            legRight.receiveShadow = true;
-            legRight.position.set(0.25, 0.45, 0);
-            group.add(legRight);
+            // مواد
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.4 });
+            const pantsMat = new THREE.MeshStandardMaterial({ color: 0x3a5f8a, roughness: 0.6 });
+            const shirtMat = new THREE.MeshStandardMaterial({ color: 0xaa5533, roughness: 0.5 });
+            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            const hairMat = new THREE.MeshStandardMaterial({ color: 0x4a2c1a });
 
-            // الجسم (صندوق أخضر)
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x44aa88 });
-            const bodyGeo = new THREE.BoxGeometry(0.8, 1.2, 0.5);
-            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            // الجسم
+            const bodyGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.4);
+            const body = new THREE.Mesh(bodyGeo, shirtMat);
             body.castShadow = true;
             body.receiveShadow = true;
-            body.position.set(0, 1.1, 0);
+            body.position.y = 0.9;
             group.add(body);
 
-            // الذراعان (أسطوانات زرقاء)
-            const armMat = new THREE.MeshStandardMaterial({ color: 0x3366cc });
-            const armGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.8);
-            
-            const armLeft = new THREE.Mesh(armGeo, armMat);
-            armLeft.castShadow = true;
-            armLeft.receiveShadow = true;
-            armLeft.position.set(-0.55, 1.1, 0);
-            armLeft.rotation.z = 0.2;
-            group.add(armLeft);
-            
-            const armRight = new THREE.Mesh(armGeo, armMat);
-            armRight.castShadow = true;
-            armRight.receiveShadow = true;
-            armRight.position.set(0.55, 1.1, 0);
-            armRight.rotation.z = -0.2;
-            group.add(armRight);
-
-            // الرأس (كرة بلون بشري)
-            const headMat = new THREE.MeshStandardMaterial({ color: 0xffccaa });
-            const headGeo = new THREE.SphereGeometry(0.35, 16);
-            const head = new THREE.Mesh(headGeo, headMat);
+            // الرأس
+            const headGeo = new THREE.SphereGeometry(0.5, 24);
+            const head = new THREE.Mesh(headGeo, skinMat);
             head.castShadow = true;
             head.receiveShadow = true;
-            head.position.set(0, 1.8, 0);
+            head.position.y = 1.8;
             group.add(head);
 
-            // عينان
-            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-            const eyeGeo = new THREE.SphereGeometry(0.07);
+            // عيون
+            const eyeGeo = new THREE.SphereGeometry(0.1, 8);
             const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-            eyeL.position.set(-0.12, 1.9, 0.3);
+            eyeL.position.set(-0.2, 1.95, 0.45);
             group.add(eyeL);
             const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-            eyeR.position.set(0.12, 1.9, 0.3);
+            eyeR.position.set(0.2, 1.95, 0.45);
             group.add(eyeR);
+
+            // قبعة أو شعر
+            const hairGeo = new THREE.ConeGeometry(0.45, 0.3, 8);
+            const hair = new THREE.Mesh(hairGeo, hairMat);
+            hair.position.set(0, 2.15, 0);
+            hair.rotation.x = 0.1;
+            group.add(hair);
+
+            // الأرجل
+            const legGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.0);
+            const legL = new THREE.Mesh(legGeo, pantsMat);
+            legL.castShadow = true;
+            legL.receiveShadow = true;
+            legL.position.set(-0.25, 0.5, 0);
+            group.add(legL);
+            const legR = new THREE.Mesh(legGeo, pantsMat);
+            legR.castShadow = true;
+            legR.receiveShadow = true;
+            legR.position.set(0.25, 0.5, 0);
+            group.add(legR);
+
+            // الذراعان
+            const armGeo = new THREE.CylinderGeometry(0.2, 0.2, 1.1);
+            const armL = new THREE.Mesh(armGeo, skinMat);
+            armL.castShadow = true;
+            armL.receiveShadow = true;
+            armL.position.set(-0.65, 1.2, 0);
+            armL.rotation.z = 0.2;
+            group.add(armL);
+            const armR = new THREE.Mesh(armGeo, skinMat);
+            armR.castShadow = true;
+            armR.receiveShadow = true;
+            armR.position.set(0.65, 1.2, 0);
+            armR.rotation.z = -0.2;
+            group.add(armR);
 
             return group;
         }
 
         const player = createCharacter();
-        player.position.set(0, 0, 0);
+        player.position.set(0, 0.5, 0);
         player.castShadow = true;
         player.receiveShadow = true;
         scene.add(player);
 
-        // ----- أشياء في المشهد (أشجار وأرانب) -----
-        function createTree(x, z) {
+        // --- إنشاء الأشجار الواقعية ---
+        function createRealisticTree(x, z) {
             const group = new THREE.Group();
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 2), trunkMat);
+
+            // مواد
+            const barkMat = new THREE.MeshStandardMaterial({ color: 0x6b4c3b, roughness: 0.8 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.4, emissive: 0x112211 });
+
+            // جذع رئيسي (أسطوانة)
+            const trunkGeo = new THREE.CylinderGeometry(0.8, 1.2, 5);
+            const trunk = new THREE.Mesh(trunkGeo, barkMat);
             trunk.castShadow = true;
             trunk.receiveShadow = true;
-            trunk.position.y = 1;
+            trunk.position.y = 2.5;
             group.add(trunk);
 
-            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2E8B57 });
-            const leaf1 = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.8), leafMat);
+            // فروع (أسطوانات صغيرة مائلة)
+            const branchGeo = new THREE.CylinderGeometry(0.3, 0.4, 2);
+            
+            const branch1 = new THREE.Mesh(branchGeo, barkMat);
+            branch1.castShadow = true;
+            branch1.receiveShadow = true;
+            branch1.position.set(0.8, 3.5, 0.5);
+            branch1.rotation.z = 0.4;
+            branch1.rotation.x = 0.3;
+            group.add(branch1);
+
+            const branch2 = new THREE.Mesh(branchGeo, barkMat);
+            branch2.castShadow = true;
+            branch2.receiveShadow = true;
+            branch2.position.set(-0.7, 4.0, -0.6);
+            branch2.rotation.z = -0.3;
+            branch2.rotation.x = -0.2;
+            group.add(branch2);
+
+            // أوراق الشجر (كرات متعددة)
+            const leafGeo = new THREE.SphereGeometry(1.0, 7);
+            
+            const leaf1 = new THREE.Mesh(leafGeo, leafMat);
             leaf1.castShadow = true;
             leaf1.receiveShadow = true;
-            leaf1.position.y = 2.5;
+            leaf1.position.set(0, 5.5, 0);
+            leaf1.scale.set(1.5, 1.2, 1.5);
             group.add(leaf1);
-            
-            const leaf2 = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.5), leafMat);
+
+            const leaf2 = new THREE.Mesh(leafGeo, leafMat);
             leaf2.castShadow = true;
             leaf2.receiveShadow = true;
-            leaf2.position.y = 3.8;
+            leaf2.position.set(0.8, 4.8, 0.8);
+            leaf2.scale.set(1.2, 1.0, 1.2);
             group.add(leaf2);
+
+            const leaf3 = new THREE.Mesh(leafGeo, leafMat);
+            leaf3.castShadow = true;
+            leaf3.receiveShadow = true;
+            leaf3.position.set(-0.9, 4.5, -0.7);
+            leaf3.scale.set(1.2, 1.0, 1.2);
+            group.add(leaf3);
+
+            const leaf4 = new THREE.Mesh(leafGeo, leafMat);
+            leaf4.castShadow = true;
+            leaf4.receiveShadow = true;
+            leaf4.position.set(0.5, 6.0, -0.5);
+            leaf4.scale.set(1.1, 0.9, 1.1);
+            group.add(leaf4);
 
             group.position.set(x, 0, z);
             return group;
         }
 
-        // أشجار عشوائية
-        for (let i = 0; i < 12; i++) {
-            const angle = (i / 12) * Math.PI * 2;
-            const radius = 7 + Math.random() * 5;
+        // إضافة غابة كثيفة
+        for (let i = 0; i < 40; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 10 + Math.random() * 40;
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
-            scene.add(createTree(x, z));
+            const tree = createRealisticTree(x, z);
+            scene.add(tree);
         }
 
-        // أرانب
+        // --- إضافة حيوانات (غزال وأرنب) ---
+        function createDeer(x, z) {
+            const group = new THREE.Group();
+            const brownMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
+            const lightBrownMat = new THREE.MeshStandardMaterial({ color: 0xC19A6B });
+
+            // جسم
+            const bodyGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.2);
+            const body = new THREE.Mesh(bodyGeo, brownMat);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            body.position.y = 0.8;
+            body.rotation.z = 0.1;
+            group.add(body);
+
+            // رأس
+            const headGeo = new THREE.SphereGeometry(0.4);
+            const head = new THREE.Mesh(headGeo, lightBrownMat);
+            head.castShadow = true;
+            head.receiveShadow = true;
+            head.position.set(0.6, 1.2, 0.3);
+            group.add(head);
+
+            // أرجل
+            const legGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.8);
+            for (let i = 0; i < 4; i++) {
+                const leg = new THREE.Mesh(legGeo, brownMat);
+                leg.castShadow = true;
+                leg.receiveShadow = true;
+                leg.position.set(i < 2 ? -0.4 : 0.4, 0.4, i % 2 === 0 ? 0.3 : -0.3);
+                group.add(leg);
+            }
+
+            // قرون (بسيطة)
+            const hornGeo = new THREE.ConeGeometry(0.1, 0.6);
+            const hornMat = new THREE.MeshStandardMaterial({ color: 0x5a3e2b });
+            const hornL = new THREE.Mesh(hornGeo, hornMat);
+            hornL.position.set(0.2, 1.6, 0.2);
+            hornL.rotation.z = -0.3;
+            group.add(hornL);
+            const hornR = new THREE.Mesh(hornGeo, hornMat);
+            hornR.position.set(0.2, 1.6, -0.1);
+            hornR.rotation.z = -0.3;
+            group.add(hornR);
+
+            group.position.set(x, 0.2, z);
+            return group;
+        }
+
         function createRabbit(x, z) {
             const group = new THREE.Group();
-            const white = new THREE.MeshStandardMaterial({ color: 0xf0f0f0 });
-            const pink = new THREE.MeshStandardMaterial({ color: 0xffaaaa });
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5 });
+            const pinkMat = new THREE.MeshStandardMaterial({ color: 0xffaaaa });
 
-            const body = new THREE.Mesh(new THREE.SphereGeometry(0.5), white);
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.5), whiteMat);
             body.castShadow = true;
             body.receiveShadow = true;
             body.position.y = 0.4;
             group.add(body);
 
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), white);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), whiteMat);
             head.castShadow = true;
             head.receiveShadow = true;
             head.position.set(0, 0.8, 0.4);
             group.add(head);
 
-            const earGeo = new THREE.ConeGeometry(0.15, 0.5);
-            const earL = new THREE.Mesh(earGeo, pink);
-            earL.castShadow = true;
-            earL.receiveShadow = true;
+            const earGeo = new THREE.ConeGeometry(0.15, 0.6);
+            const earL = new THREE.Mesh(earGeo, pinkMat);
             earL.position.set(-0.15, 1.1, 0.3);
             earL.rotation.z = -0.2;
             group.add(earL);
-            
-            const earR = new THREE.Mesh(earGeo, pink);
-            earR.castShadow = true;
-            earR.receiveShadow = true;
+            const earR = new THREE.Mesh(earGeo, pinkMat);
             earR.position.set(0.15, 1.1, 0.3);
             earR.rotation.z = 0.2;
             group.add(earR);
@@ -333,37 +505,50 @@
             return group;
         }
 
-        const rabbit1 = createRabbit(3, 4);
-        const rabbit2 = createRabbit(-4, -3);
-        const rabbit3 = createRabbit(5, -5);
+        const deer1 = createDeer(12, 8);
+        const deer2 = createDeer(-8, 15);
+        const rabbit1 = createRabbit(5, -6);
+        const rabbit2 = createRabbit(-10, -12);
+        scene.add(deer1);
+        scene.add(deer2);
         scene.add(rabbit1);
         scene.add(rabbit2);
-        scene.add(rabbit3);
 
-        // ----- الكاميرات -----
-        const cameraFollow = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        cameraFollow.position.set(4, 3, 5);
+        // --- إضافة بحيرة صغيرة (ماء) ---
+        const waterGeometry = new THREE.CircleGeometry(15, 32);
+        const water = new Water(waterGeometry, {
+            textureWidth: 512,
+            textureHeight: 512,
+            waterNormals: textureLoader.load('https://threejs.org/examples/textures/water/Water_1_M_Normal.jpg'),
+            sunDirection: new THREE.Vector3(1, 1, 1),
+            sunColor: 0xffaa88,
+            waterColor: 0x336699,
+            distortionScale: 3.7,
+            fog: true
+        });
+        water.rotation.x = -Math.PI / 2;
+        water.position.set(20, 0.1, 20);
+        water.receiveShadow = true;
+        scene.add(water);
 
-        const cameraFree = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        cameraFree.position.set(8, 6, 10);
+        // --- تحريك الشمس والسماء حسب الوقت (تأثير نهاري) ---
+        let sunAngle = 0;
 
-        let activeCamera = cameraFollow; // نبدأ بكاميرا التتبع
-
-        const controls = new OrbitControls(cameraFree, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.enabled = false;
-
-        // ----- حالة الأزرار (للوحة المفاتيح واللمس) -----
-        const keyState = { w: false, a: false, s: false, d: false };
-
-        // وظيفة لتحديث نص مؤشر الكاميرا
-        function updateCameraIndicator() {
-            document.getElementById('cam-indicator').innerText = 
-                activeCamera === cameraFollow ? '🎥 كاميرا: خلفية' : '🎥 كاميرا: حرة';
+        function updateSun() {
+            sunAngle += 0.001;
+            const sunPos = new THREE.Vector3(
+                Math.cos(sunAngle) * 80,
+                Math.sin(sunAngle) * 80 + 20,
+                50
+            );
+            sunLight.position.copy(sunPos);
+            skyUniforms['sunPosition'].value.copy(sunPos);
         }
 
-        // ----- دعم لوحة المفاتيح (للكمبيوتر) -----
+        // --- التحكم بالشخصية (WASD) للوحة المفاتيح واللمس ---
+        const keyState = { w: false, a: false, s: false, d: false };
+
+        // لوحة المفاتيح
         window.addEventListener('keydown', (e) => {
             if (e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD' || e.code === 'KeyC') {
                 e.preventDefault();
@@ -376,7 +561,8 @@
                 case 'KeyC':
                     activeCamera = (activeCamera === cameraFollow) ? cameraFree : cameraFollow;
                     controls.enabled = (activeCamera === cameraFree);
-                    updateCameraIndicator();
+                    document.getElementById('cam-status').innerText = 
+                        activeCamera === cameraFollow ? '📷 كاميرا: خلفية' : '📷 كاميرا: حرة';
                     break;
             }
         });
@@ -391,75 +577,72 @@
             }
         });
 
-        // ----- دعم أزرار اللمس -----
-        // نضيف مستمعي الأحداث للأزرار
+        // أزرار اللمس
         const btnW = document.getElementById('btn-w');
         const btnA = document.getElementById('btn-a');
         const btnS = document.getElementById('btn-s');
         const btnD = document.getElementById('btn-d');
         const btnC = document.getElementById('btn-c');
 
-        function setButtonActive(btn, state) {
+        function setActive(btn, state) {
             if (state) btn.classList.add('active');
             else btn.classList.remove('active');
         }
 
-        // أحداث اللمس (للهاتف)
-        btnW.addEventListener('touchstart', (e) => { e.preventDefault(); keyState.w = true; setButtonActive(btnW, true); });
-        btnW.addEventListener('touchend', (e) => { e.preventDefault(); keyState.w = false; setButtonActive(btnW, false); });
-        btnW.addEventListener('touchcancel', (e) => { e.preventDefault(); keyState.w = false; setButtonActive(btnW, false); });
+        btnW.addEventListener('touchstart', (e) => { e.preventDefault(); keyState.w = true; setActive(btnW, true); });
+        btnW.addEventListener('touchend', (e) => { e.preventDefault(); keyState.w = false; setActive(btnW, false); });
+        btnW.addEventListener('touchcancel', (e) => { e.preventDefault(); keyState.w = false; setActive(btnW, false); });
 
-        btnA.addEventListener('touchstart', (e) => { e.preventDefault(); keyState.a = true; setButtonActive(btnA, true); });
-        btnA.addEventListener('touchend', (e) => { e.preventDefault(); keyState.a = false; setButtonActive(btnA, false); });
-        btnA.addEventListener('touchcancel', (e) => { e.preventDefault(); keyState.a = false; setButtonActive(btnA, false); });
+        btnA.addEventListener('touchstart', (e) => { e.preventDefault(); keyState.a = true; setActive(btnA, true); });
+        btnA.addEventListener('touchend', (e) => { e.preventDefault(); keyState.a = false; setActive(btnA, false); });
+        btnA.addEventListener('touchcancel', (e) => { e.preventDefault(); keyState.a = false; setActive(btnA, false); });
 
-        btnS.addEventListener('touchstart', (e) => { e.preventDefault(); keyState.s = true; setButtonActive(btnS, true); });
-        btnS.addEventListener('touchend', (e) => { e.preventDefault(); keyState.s = false; setButtonActive(btnS, false); });
-        btnS.addEventListener('touchcancel', (e) => { e.preventDefault(); keyState.s = false; setButtonActive(btnS, false); });
+        btnS.addEventListener('touchstart', (e) => { e.preventDefault(); keyState.s = true; setActive(btnS, true); });
+        btnS.addEventListener('touchend', (e) => { e.preventDefault(); keyState.s = false; setActive(btnS, false); });
+        btnS.addEventListener('touchcancel', (e) => { e.preventDefault(); keyState.s = false; setActive(btnS, false); });
 
-        btnD.addEventListener('touchstart', (e) => { e.preventDefault(); keyState.d = true; setButtonActive(btnD, true); });
-        btnD.addEventListener('touchend', (e) => { e.preventDefault(); keyState.d = false; setButtonActive(btnD, false); });
-        btnD.addEventListener('touchcancel', (e) => { e.preventDefault(); keyState.d = false; setButtonActive(btnD, false); });
+        btnD.addEventListener('touchstart', (e) => { e.preventDefault(); keyState.d = true; setActive(btnD, true); });
+        btnD.addEventListener('touchend', (e) => { e.preventDefault(); keyState.d = false; setActive(btnD, false); });
+        btnD.addEventListener('touchcancel', (e) => { e.preventDefault(); keyState.d = false; setActive(btnD, false); });
 
         btnC.addEventListener('touchstart', (e) => {
             e.preventDefault();
             activeCamera = (activeCamera === cameraFollow) ? cameraFree : cameraFollow;
             controls.enabled = (activeCamera === cameraFree);
-            updateCameraIndicator();
+            document.getElementById('cam-status').innerText = 
+                activeCamera === cameraFollow ? '📷 كاميرا: خلفية' : '📷 كاميرا: حرة';
         });
 
-        // أيضًا نضيف أحداث الماوس للاختبار على الكمبيوتر (اختياري)
-        btnW.addEventListener('mousedown', (e) => { e.preventDefault(); keyState.w = true; setButtonActive(btnW, true); });
-        btnW.addEventListener('mouseup', (e) => { e.preventDefault(); keyState.w = false; setButtonActive(btnW, false); });
-        btnW.addEventListener('mouseleave', (e) => { keyState.w = false; setButtonActive(btnW, false); });
-
-        btnA.addEventListener('mousedown', (e) => { e.preventDefault(); keyState.a = true; setButtonActive(btnA, true); });
-        btnA.addEventListener('mouseup', (e) => { e.preventDefault(); keyState.a = false; setButtonActive(btnA, false); });
-        btnA.addEventListener('mouseleave', (e) => { keyState.a = false; setButtonActive(btnA, false); });
-
-        btnS.addEventListener('mousedown', (e) => { e.preventDefault(); keyState.s = true; setButtonActive(btnS, true); });
-        btnS.addEventListener('mouseup', (e) => { e.preventDefault(); keyState.s = false; setButtonActive(btnS, false); });
-        btnS.addEventListener('mouseleave', (e) => { keyState.s = false; setButtonActive(btnS, false); });
-
-        btnD.addEventListener('mousedown', (e) => { e.preventDefault(); keyState.d = true; setButtonActive(btnD, true); });
-        btnD.addEventListener('mouseup', (e) => { e.preventDefault(); keyState.d = false; setButtonActive(btnD, false); });
-        btnD.addEventListener('mouseleave', (e) => { keyState.d = false; setButtonActive(btnD, false); });
-
+        // نسخ لأحداث الفأرة (للكمبيوتر)
+        btnW.addEventListener('mousedown', (e) => { e.preventDefault(); keyState.w = true; setActive(btnW, true); });
+        btnW.addEventListener('mouseup', (e) => { e.preventDefault(); keyState.w = false; setActive(btnW, false); });
+        btnW.addEventListener('mouseleave', (e) => { keyState.w = false; setActive(btnW, false); });
+        btnA.addEventListener('mousedown', (e) => { e.preventDefault(); keyState.a = true; setActive(btnA, true); });
+        btnA.addEventListener('mouseup', (e) => { e.preventDefault(); keyState.a = false; setActive(btnA, false); });
+        btnA.addEventListener('mouseleave', (e) => { keyState.a = false; setActive(btnA, false); });
+        btnS.addEventListener('mousedown', (e) => { e.preventDefault(); keyState.s = true; setActive(btnS, true); });
+        btnS.addEventListener('mouseup', (e) => { e.preventDefault(); keyState.s = false; setActive(btnS, false); });
+        btnS.addEventListener('mouseleave', (e) => { keyState.s = false; setActive(btnS, false); });
+        btnD.addEventListener('mousedown', (e) => { e.preventDefault(); keyState.d = true; setActive(btnD, true); });
+        btnD.addEventListener('mouseup', (e) => { e.preventDefault(); keyState.d = false; setActive(btnD, false); });
+        btnD.addEventListener('mouseleave', (e) => { keyState.d = false; setActive(btnD, false); });
         btnC.addEventListener('click', (e) => {
             e.preventDefault();
             activeCamera = (activeCamera === cameraFollow) ? cameraFree : cameraFollow;
             controls.enabled = (activeCamera === cameraFree);
-            updateCameraIndicator();
+            document.getElementById('cam-status').innerText = 
+                activeCamera === cameraFollow ? '📷 كاميرا: خلفية' : '📷 كاميرا: حرة';
         });
 
-        // ----- حلقة اللعبة -----
-        let clock = new THREE.Clock();
+        // --- حلقة اللعبة الرئيسية ---
+        const clock = new THREE.Clock();
 
         function animate() {
             const delta = clock.getDelta();
+            const elapsedTime = performance.now() / 1000;
 
             // حركة الشخصية
-            const speed = 0.15;
+            const speed = 0.2;
             if (keyState.w) player.position.z -= speed;
             if (keyState.s) player.position.z += speed;
             if (keyState.a) player.position.x -= speed;
@@ -467,18 +650,24 @@
 
             // تحديث كاميرا التتبع
             if (activeCamera === cameraFollow) {
-                const offset = new THREE.Vector3(-3, 2.5, 4);
+                const offset = new THREE.Vector3(-4, 3, 5);
                 cameraFollow.position.copy(player.position.clone().add(offset));
                 cameraFollow.lookAt(player.position);
             } else {
                 controls.update();
             }
 
-            // حركة بسيطة للأرانب (ارتفاع وهبوط)
-            const t = performance.now() * 0.001;
-            rabbit1.position.y = 0.4 + Math.sin(t * 3) * 0.1;
-            rabbit2.position.y = 0.4 + Math.cos(t * 4) * 0.1;
-            rabbit3.position.y = 0.4 + Math.sin(t * 5) * 0.1;
+            // تحريك الحيوانات (حركة بسيطة)
+            deer1.position.y = 0.2 + Math.sin(elapsedTime * 3) * 0.05;
+            deer2.position.y = 0.2 + Math.cos(elapsedTime * 4) * 0.05;
+            rabbit1.position.y = Math.sin(elapsedTime * 5) * 0.1;
+            rabbit2.position.y = Math.cos(elapsedTime * 6) * 0.1;
+
+            // تحديث الشمس
+            updateSun();
+
+            // تحديث الماء
+            water.material.uniforms['time'].value += delta;
 
             renderer.render(scene, activeCamera);
             requestAnimationFrame(animate);
@@ -486,7 +675,7 @@
 
         animate();
 
-        // ----- تغيير حجم النافذة -----
+        // --- تغيير حجم النافذة ---
         window.addEventListener('resize', () => {
             cameraFollow.aspect = window.innerWidth / window.innerHeight;
             cameraFollow.updateProjectionMatrix();
@@ -495,9 +684,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // تحديث مؤشر الكاميرا في البداية
-        updateCameraIndicator();
-        console.log('✅ اللعبة جاهزة للهاتف والكمبيوتر');
+        console.log('🌲 لعبة البقاء جاهزة!');
     </script>
 </body>
 </html>
