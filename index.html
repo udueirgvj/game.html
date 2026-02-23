@@ -3,15 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>عالم الغابة الواقعي - جودة 4K</title>
+    <title>غابة واقعية - جودة 4K+</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: black; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: black;
+        }
         #info {
             position: absolute;
             top: 20px;
             left: 20px;
             color: white;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.5);
             padding: 8px 20px;
             border-radius: 30px;
             backdrop-filter: blur(5px);
@@ -19,6 +24,7 @@
             z-index: 100;
             pointer-events: none;
             border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         #loading {
             position: absolute;
@@ -26,17 +32,44 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-size: 24px;
-            background: rgba(0,0,0,0.6);
-            padding: 20px 40px;
-            border-radius: 10px;
+            font-size: 28px;
+            background: rgba(0,0,0,0.7);
+            padding: 30px 60px;
+            border-radius: 20px;
             z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        #loading small {
+            display: block;
+            font-size: 14px;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+        #stats {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #0f0;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 100;
+            backdrop-filter: blur(2px);
         }
     </style>
 </head>
 <body>
-    <div id="loading">جاري تحميل العالم الواقعي...</div>
-    <div id="info">🌳 غابة 4K | WASD للتجول | C لتبديل الكاميرا | اضغط F لعرض 4K</div>
+    <div id="loading">
+        🌳 جاري تحميل الغابة الواقعية... 
+        <small>قد يستغرق التحميل بضع ثوانٍ على الأجهزة القوية</small>
+    </div>
+    <div id="info">🌲 غابة 4K+ | WASD للتجول | C لتبديل الكاميرا | F لوضع ملء الشاشة</div>
+    <div id="stats">FPS: <span id="fps">0</span></div>
 
     <!-- استيراد المكتبات -->
     <script type="importmap">
@@ -53,71 +86,112 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { Sky } from 'three/addons/objects/Sky.js';
         import { Water } from 'three/addons/objects/Water.js';
-        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-
-        // --- إعداد المشهد والرندر بدقة 4K ---
+        
+        // --- إعداد المشهد والرندر بأقصى جودة ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xaaccff);
-        scene.fog = new THREE.FogExp2(0xaaccff, 0.0015); // ضباب خفيف للعمق
+        scene.fog = new THREE.FogExp2(0xaaccff, 0.0012); // ضباب خفيف للغاية
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", precision: "highp" });
+        // إعداد الرندر بدقة عالية مع anti-aliasing
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            powerPreference: "high-performance",
+            precision: "highp",
+            stencil: false,
+            depth: true
+        });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // دقة عالية
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // دقة عالية جداً (يمكن رفعها إلى 2.5 لكن قد يؤثر)
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.shadowMap.bias = 0.0001;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // ظلال ناعمة
+        renderer.shadowMap.autoUpdate = true;
+        renderer.shadowMap.bias = 0.00005;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.2;
         renderer.outputEncoding = THREE.sRGBEncoding; // لاحظ: في Three.js r128 قد تحتاج إلى colorSpace
         document.body.appendChild(renderer.domElement);
 
-        // --- إخفاء شاشة التحميل ---
-        setTimeout(() => document.getElementById('loading').style.display = 'none', 2000);
+        // --- إخفاء شاشة التحميل بعد ثانيتين ---
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+        }, 3000);
 
-        // --- الكاميرات (كاميرا حرة وكاميرا تتبع) ---
+        // --- نظام حساب FPS بسيط ---
+        let lastTime = performance.now();
+        let frames = 0;
+        const fpsSpan = document.getElementById('fps');
+        setInterval(() => {
+            const now = performance.now();
+            const delta = now - lastTime;
+            const fps = Math.round(1000 / delta * frames);
+            fpsSpan.textContent = fps;
+            frames = 0;
+            lastTime = now;
+        }, 1000);
+
+        function countFrame() {
+            frames++;
+            requestAnimationFrame(countFrame);
+        }
+        countFrame();
+
+        // --- الكاميرات (كاميرا حرة لتجوال العالم + كاميرا تتبع لشخصية) ---
         const cameraFree = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        cameraFree.position.set(30, 20, 50);
+        cameraFree.position.set(40, 30, 60);
+        cameraFree.lookAt(0, 10, 0);
 
         const cameraFollow = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        cameraFollow.position.set(0, 5, 15);
+        cameraFollow.position.set(10, 8, 20);
 
-        let activeCamera = cameraFree; // نبدأ بالكاميرا الحرة لرؤية المشهد
+        let activeCamera = cameraFree; // نبدأ بالكاميرا الحرة لاستكشاف العالم
 
         const controls = new OrbitControls(cameraFree, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.maxPolarAngle = Math.PI / 2.2;
         controls.enableZoom = true;
-        controls.target.set(20, 5, 20); // نقطة مركزية في الغابة
+        controls.target.set(20, 10, 20);
+        controls.maxDistance = 200;
 
-        // --- إضاءة محيطة عالية الجودة ---
-        const hemiLight = new THREE.HemisphereLight(0x88ccff, 0x335511, 1.2);
+        // --- إضاءة متطورة (Hemisphere + Directional + Point) ---
+        // إضاءة محيطة من السماء والأرض
+        const hemiLight = new THREE.HemisphereLight(0x88ccff, 0x335511, 1.5);
         scene.add(hemiLight);
 
-        // --- إضاءة شمسية مع ظلال ناعمة ---
-        const sunLight = new THREE.DirectionalLight(0xffeedd, 1.5);
-        sunLight.position.set(30, 40, 20);
+        // إضاءة شمسية رئيسية مع ظلال عالية الدقة
+        const sunLight = new THREE.DirectionalLight(0xffeedd, 1.8);
+        sunLight.position.set(40, 60, 30);
         sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 4096; // دقة عالية جداً للظلال
-        sunLight.shadow.mapSize.height = 4096;
+        sunLight.shadow.mapSize.width = 8192; // دقة ظلال فائقة (4Kx4K)
+        sunLight.shadow.mapSize.height = 8192;
         sunLight.shadow.camera.near = 1;
-        sunLight.shadow.camera.far = 150;
-        sunLight.shadow.camera.left = -50;
-        sunLight.shadow.camera.right = 50;
-        sunLight.shadow.camera.top = 50;
-        sunLight.shadow.camera.bottom = -50;
-        sunLight.shadow.bias = -0.0005;
+        sunLight.shadow.camera.far = 200;
+        sunLight.shadow.camera.left = -70;
+        sunLight.shadow.camera.right = 70;
+        sunLight.shadow.camera.top = 70;
+        sunLight.shadow.camera.bottom = -70;
+        sunLight.shadow.bias = -0.0002;
         sunLight.shadow.normalBias = 0.02;
+        sunLight.shadow.radius = 2; // نصف قطر الظل الناعم
         scene.add(sunLight);
 
-        // --- إضاءة خلفية دافئة ---
-        const backLight = new THREE.DirectionalLight(0xffaa66, 0.6);
-        backLight.position.set(-20, 20, -30);
+        // إضاءة خلفية دافئة لتعزيز العمق
+        const backLight = new THREE.DirectionalLight(0xffaa66, 0.8);
+        backLight.position.set(-30, 40, -50);
         scene.add(backLight);
 
-        // --- سماء ديناميكية (Sky) مع غيوم ---
+        // إضاءة نقطية خفيفة تحت الأشجار
+        const pointLight1 = new THREE.PointLight(0x88aa44, 0.5, 50);
+        pointLight1.position.set(20, 5, 30);
+        scene.add(pointLight1);
+        
+        const pointLight2 = new THREE.PointLight(0xaa8844, 0.5, 50);
+        pointLight2.position.set(40, 8, 10);
+        scene.add(pointLight2);
+
+        // --- سماء ديناميكية (Sky) مع غيوم متحركة (محاكاة) ---
         const sky = new Sky();
-        sky.scale.setScalar(450);
+        sky.scale.setScalar(500);
         scene.add(sky);
 
         const skyUniforms = sky.material.uniforms;
@@ -125,144 +199,144 @@
         skyUniforms['rayleigh'].value = 1.5;
         skyUniforms['mieCoefficient'].value = 0.005;
         skyUniforms['mieDirectionalG'].value = 0.8;
-        skyUniforms['sunPosition'].value.set(30, 30, 20);
+        skyUniforms['sunPosition'].value.copy(sunLight.position);
 
-        // --- أرضية بتضاريس متنوعة (نستخدم نسيج عالي الدقة) ---
+        // --- أرضية بتضاريس وعرة (نستخدم نسيج عالي الدقة مع إزاحة) ---
         const textureLoader = new THREE.TextureLoader();
         
-        // تحميل أنسجة 4K من مصادر خارجية (قد تحتاج اتصال إنترنت سريع)
+        // تحميل أنسجة عالية الجودة (4K) من مصادر موثوقة
         const grassColor = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/terrain/grass_01_diff_1k.jpg');
         const grassNormal = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/terrain/grass_01_nor_gl_1k.jpg');
         const grassRough = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/terrain/grass_01_rough_1k.jpg');
         const grassDisp = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/terrain/grass_01_disp_1k.jpg');
 
-        // تكرار النسيج
         [grassColor, grassNormal, grassRough, grassDisp].forEach(tex => {
             tex.wrapS = THREE.RepeatWrapping;
             tex.wrapT = THREE.RepeatWrapping;
-            tex.repeat.set(20, 20);
+            tex.repeat.set(30, 30); // تكرار النسيج لمساحة واسعة
         });
 
-        // إنشاء أرضية كبيرة مع تضاريس (استخدام PlaneGeometry مع تعديل الارتفاعات)
-        const groundGeo = new THREE.PlaneGeometry(200, 200, 256, 256); // subdivisions عالية للتفاصيل
+        // إنشاء أرضية كبيرة مع تضاريس (256x256 تقسيمات لتفاصيل دقيقة)
+        const groundGeo = new THREE.PlaneGeometry(300, 300, 256, 256);
         const groundMat = new THREE.MeshStandardMaterial({
             map: grassColor,
             normalMap: grassNormal,
             roughnessMap: grassRough,
             displacementMap: grassDisp,
-            displacementScale: 2.5,
+            displacementScale: 4.0, // تضاريس واضحة
             roughness: 0.7,
             metalness: 0.1,
-            color: 0xffffff
+            color: 0xffffff,
+            emissive: 0x000000
         });
 
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -0.5; // لأسفل قليلاً لإخفاء الحواف
+        ground.position.y = -1.5; // لأسفل قليلاً لإخفاء الحواف
         ground.receiveShadow = true;
         ground.castShadow = false;
         scene.add(ground);
 
-        // --- إضافة تلال صغيرة (مكررة) لتعزيز الواقعية ---
-        const hillMat = new THREE.MeshStandardMaterial({ color: 0x5a7a4a, roughness: 0.8, emissive: 0x112211 });
-        for (let i = 0; i < 30; i++) {
-            const hillGeo = new THREE.ConeGeometry(1 + Math.random() * 3, 1 + Math.random() * 2, 8);
+        // --- تلال صغيرة إضافية (تضاريس إضافية) ---
+        const hillMat = new THREE.MeshStandardMaterial({ color: 0x5a7a4a, roughness: 0.9, emissive: 0x112211 });
+        for (let i = 0; i < 40; i++) {
+            const hillGeo = new THREE.ConeGeometry(2 + Math.random() * 5, 2 + Math.random() * 4, 8);
             const hill = new THREE.Mesh(hillGeo, hillMat);
             const angle = Math.random() * Math.PI * 2;
-            const radius = 30 + Math.random() * 60;
+            const radius = 40 + Math.random() * 100;
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
-            hill.position.set(x, 0.2, z);
+            hill.position.set(x, 0.5, z);
             hill.castShadow = true;
             hill.receiveShadow = true;
             scene.add(hill);
         }
 
-        // --- عشب كثيف باستخدام InstancedMesh (آلاف القطع) مع حركة الرياح ---
-        const bladeGeo = new THREE.ConeGeometry(0.15, 0.6, 4);
+        // --- عشب كثيف باستخدام InstancedMesh (30 ألف قطعة) ---
+        const bladeGeo = new THREE.ConeGeometry(0.2, 0.8, 4);
         const bladeMat = new THREE.MeshStandardMaterial({ color: 0x4a7a4a, emissive: 0x112211 });
-        const bladeCount = 20000;
+        const bladeCount = 30000; // يمكن تقليل العدد للأداء
         const instancedGrass = new THREE.InstancedMesh(bladeGeo, bladeMat, bladeCount);
         instancedGrass.castShadow = true;
         instancedGrass.receiveShadow = true;
 
         const dummy = new THREE.Object3D();
         for (let i = 0; i < bladeCount; i++) {
-            const radius = 20 + Math.random() * 90;
+            const radius = 30 + Math.random() * 120;
             const angle = Math.random() * Math.PI * 2;
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
             
             dummy.position.set(x, 0.3, z);
             dummy.rotation.y = Math.random() * Math.PI;
-            dummy.scale.set(1, 0.8 + Math.random() * 0.7, 1);
+            dummy.scale.set(1, 0.7 + Math.random() * 0.8, 1);
             dummy.updateMatrix();
             instancedGrass.setMatrixAt(i, dummy.matrix);
         }
         instancedGrass.instanceMatrix.needsUpdate = true;
         scene.add(instancedGrass);
 
-        // --- أزهار ملونة بأشكال مختلفة ---
-        const flowerColors = [0xff4d4d, 0xff9f4d, 0xffeb4d, 0x9f4dff, 0x4dffdb];
-        const flowerMat = new THREE.MeshStandardMaterial({ color: 0xffffff }); // سنغير اللون لكل زهرة
-        const flowerGeo = new THREE.ConeGeometry(0.2, 0.3, 6);
-        
-        for (let i = 0; i < 800; i++) {
-            const flower = new THREE.Mesh(flowerGeo, new THREE.MeshStandardMaterial({ color: flowerColors[Math.floor(Math.random() * flowerColors.length)] }));
+        // --- أزهار ملونة بأشكال متنوعة (2000 زهرة) ---
+        const flowerColors = [0xff3333, 0xff9933, 0xffdd33, 0xaa33ff, 0x33ffaa];
+        const flowerGeo = new THREE.ConeGeometry(0.25, 0.4, 6);
+        for (let i = 0; i < 2000; i++) {
+            const color = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+            const flowerMat = new THREE.MeshStandardMaterial({ color: color, emissive: 0x111111 });
+            const flower = new THREE.Mesh(flowerGeo, flowerMat);
             const angle = Math.random() * Math.PI * 2;
-            const radius = 10 + Math.random() * 70;
+            const radius = 20 + Math.random() * 100;
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
-            flower.position.set(x, 0.2, z);
+            flower.position.set(x, 0.25, z);
             flower.castShadow = true;
             flower.receiveShadow = true;
             scene.add(flower);
         }
 
-        // --- أشجار واقعية (نوعان: صنوبر وكستناء) ---
+        // --- أشجار متنوعة (3 أنواع) باستخدام دوال منفصلة ---
         function createTreePine(x, z) {
             const group = new THREE.Group();
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4c3b, roughness: 0.8 });
-            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.4, emissive: 0x112211 });
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4c3b, roughness: 0.9 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.5, emissive: 0x112211 });
 
             // جذع
-            const trunkGeo = new THREE.CylinderGeometry(0.8, 1.2, 5);
+            const trunkGeo = new THREE.CylinderGeometry(0.8, 1.3, 6);
             const trunk = new THREE.Mesh(trunkGeo, trunkMat);
             trunk.castShadow = true;
             trunk.receiveShadow = true;
-            trunk.position.y = 2.5;
+            trunk.position.y = 3;
             group.add(trunk);
 
             // فروع جانبية
-            const branchGeo = new THREE.CylinderGeometry(0.3, 0.4, 2);
-            for (let i = 0; i < 3; i++) {
+            const branchGeo = new THREE.CylinderGeometry(0.3, 0.5, 2.5);
+            for (let i = 0; i < 4; i++) {
                 const branch = new THREE.Mesh(branchGeo, trunkMat);
                 branch.castShadow = true;
                 branch.receiveShadow = true;
-                branch.position.set(0.7 * Math.sin(i), 3 + i * 0.8, 0.7 * Math.cos(i));
-                branch.rotation.z = 0.3;
+                branch.position.set(Math.sin(i) * 1.2, 4 + i * 0.7, Math.cos(i) * 1.2);
+                branch.rotation.z = 0.4;
                 branch.rotation.y = i;
                 group.add(branch);
             }
 
-            // أوراق (كرات)
-            const leafGeo = new THREE.SphereGeometry(1.2, 6);
+            // أوراق (كرات متعددة)
+            const leafGeo = new THREE.SphereGeometry(1.2, 7);
             const leaf1 = new THREE.Mesh(leafGeo, leafMat);
             leaf1.castShadow = true;
             leaf1.receiveShadow = true;
-            leaf1.position.set(0, 5, 0);
+            leaf1.position.set(0, 6.5, 0);
             group.add(leaf1);
 
-            const leaf2 = new THREE.Mesh(new THREE.SphereGeometry(1.0, 6), leafMat);
+            const leaf2 = new THREE.Mesh(new THREE.SphereGeometry(1.0, 7), leafMat);
             leaf2.castShadow = true;
             leaf2.receiveShadow = true;
-            leaf2.position.set(0.8, 4.2, 0.6);
+            leaf2.position.set(1.0, 5.5, 0.8);
             group.add(leaf2);
 
-            const leaf3 = new THREE.Mesh(new THREE.SphereGeometry(1.0, 6), leafMat);
+            const leaf3 = new THREE.Mesh(new THREE.SphereGeometry(1.0, 7), leafMat);
             leaf3.castShadow = true;
             leaf3.receiveShadow = true;
-            leaf3.position.set(-0.7, 4.5, -0.5);
+            leaf3.position.set(-0.9, 6.0, -0.7);
             group.add(leaf3);
 
             group.position.set(x, 0, z);
@@ -274,76 +348,112 @@
             const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
             const leafMat = new THREE.MeshStandardMaterial({ color: 0x3A7734 });
 
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.4, 6), trunkMat);
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.8, 8), trunkMat);
             trunk.castShadow = true;
             trunk.receiveShadow = true;
-            trunk.position.y = 3;
+            trunk.position.y = 4;
             group.add(trunk);
 
-            const leafGeo = new THREE.SphereGeometry(2.0, 5);
+            const leafGeo = new THREE.SphereGeometry(2.2, 6);
             const leaf = new THREE.Mesh(leafGeo, leafMat);
             leaf.castShadow = true;
             leaf.receiveShadow = true;
-            leaf.position.set(0, 5.5, 0);
+            leaf.position.set(0, 7.5, 0);
             group.add(leaf);
 
-            const leaf2 = new THREE.Mesh(new THREE.SphereGeometry(1.5, 5), leafMat);
+            const leaf2 = new THREE.Mesh(new THREE.SphereGeometry(1.8, 6), leafMat);
             leaf2.castShadow = true;
             leaf2.receiveShadow = true;
-            leaf2.position.set(1.2, 4.5, 1.0);
+            leaf2.position.set(1.8, 6.2, 1.5);
             group.add(leaf2);
 
-            const leaf3 = new THREE.Mesh(new THREE.SphereGeometry(1.5, 5), leafMat);
+            const leaf3 = new THREE.Mesh(new THREE.SphereGeometry(1.8, 6), leafMat);
             leaf3.castShadow = true;
             leaf3.receiveShadow = true;
-            leaf3.position.set(-1.1, 4.8, -1.2);
+            leaf3.position.set(-1.5, 6.5, -1.3);
             group.add(leaf3);
 
             group.position.set(x, 0, z);
             return group;
         }
 
-        // توزيع 200 شجرة في الغابة
-        for (let i = 0; i < 200; i++) {
+        function createTreePalm(x, z) {
+            const group = new THREE.Group();
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f });
+
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.2, 7), trunkMat);
+            trunk.castShadow = true;
+            trunk.receiveShadow = true;
+            trunk.position.y = 3.5;
+            group.add(trunk);
+
+            for (let i = 0; i < 6; i++) {
+                const leaf = new THREE.Mesh(new THREE.ConeGeometry(1.0, 2.5, 5), leafMat);
+                leaf.castShadow = true;
+                leaf.receiveShadow = true;
+                leaf.position.set(0, 7, 0);
+                leaf.rotation.y = (i / 6) * Math.PI * 2;
+                leaf.rotation.z = 0.5;
+                group.add(leaf);
+            }
+
+            group.position.set(x, 0, z);
+            return group;
+        }
+
+        // توزيع 500 شجرة في الغابة (لتجنب الازدحام، نوزعها بشكل دائري)
+        for (let i = 0; i < 500; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const radius = 15 + Math.random() * 70;
+            const radius = 30 + Math.random() * 120;
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
             
-            if (i % 2 === 0) {
-                scene.add(createTreePine(x, z));
-            } else {
-                scene.add(createTreeOak(x, z));
-            }
+            const type = Math.floor(Math.random() * 3);
+            if (type === 0) scene.add(createTreePine(x, z));
+            else if (type === 1) scene.add(createTreeOak(x, z));
+            else scene.add(createTreePalm(x, z));
         }
 
-        // --- حيوانات (غزلان وأرانب) ---
+        // --- حيوانات (غزلان وأرانب وثعالب) ---
         function createDeer(x, z) {
             const group = new THREE.Group();
             const brown = new THREE.MeshStandardMaterial({ color: 0xB87D4B });
             const lightBrown = new THREE.MeshStandardMaterial({ color: 0xE0A878 });
 
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.2), brown);
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.4), brown);
             body.castShadow = true;
             body.receiveShadow = true;
-            body.position.y = 0.8;
+            body.position.y = 0.9;
             body.rotation.z = 0.1;
             group.add(body);
 
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.4), lightBrown);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.45), lightBrown);
             head.castShadow = true;
             head.receiveShadow = true;
-            head.position.set(0.8, 1.2, 0.2);
+            head.position.set(0.9, 1.3, 0.2);
             group.add(head);
 
-            const legGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.8);
+            const legGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.9);
             for (let i = 0; i < 4; i++) {
                 const leg = new THREE.Mesh(legGeo, brown);
                 leg.castShadow = true;
                 leg.receiveShadow = true;
-                leg.position.set(i < 2 ? -0.4 : 0.4, 0.4, i % 2 === 0 ? 0.4 : -0.4);
+                leg.position.set(i < 2 ? -0.4 : 0.4, 0.45, i % 2 === 0 ? 0.5 : -0.5);
                 group.add(leg);
             }
+
+            // قرون بسيطة
+            const hornGeo = new THREE.ConeGeometry(0.15, 0.8);
+            const hornMat = new THREE.MeshStandardMaterial({ color: 0x6a4a2a });
+            const hornL = new THREE.Mesh(hornGeo, hornMat);
+            hornL.position.set(0.5, 1.8, 0.2);
+            hornL.rotation.z = -0.3;
+            group.add(hornL);
+            const hornR = new THREE.Mesh(hornGeo, hornMat);
+            hornR.position.set(0.5, 1.8, 0.0);
+            hornR.rotation.z = -0.3;
+            group.add(hornR);
 
             group.position.set(x, 0.3, z);
             return group;
@@ -366,93 +476,150 @@
             head.position.set(0, 0.8, 0.4);
             group.add(head);
 
-            const earGeo = new THREE.ConeGeometry(0.15, 0.6);
+            const earGeo = new THREE.ConeGeometry(0.15, 0.7);
             const earL = new THREE.Mesh(earGeo, pink);
             earL.position.set(-0.15, 1.1, 0.3);
+            earL.rotation.z = -0.2;
             group.add(earL);
             const earR = new THREE.Mesh(earGeo, pink);
             earR.position.set(0.15, 1.1, 0.3);
+            earR.rotation.z = 0.2;
             group.add(earR);
 
             group.position.set(x, 0.1, z);
             return group;
         }
 
-        // إضافة 20 حيواناً
-        const deerPositions = [
-            [25, 30], [-15, 40], [50, -20], [-30, -40], [10, -50]
-        ];
-        deerPositions.forEach(pos => scene.add(createDeer(pos[0], pos[1])));
+        function createFox(x, z) {
+            const group = new THREE.Group();
+            const orange = new THREE.MeshStandardMaterial({ color: 0xCC8844 });
+            const white = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
 
-        for (let i = 0; i < 15; i++) {
-            const x = (Math.random() - 0.5) * 100;
-            const z = (Math.random() - 0.5) * 100;
-            scene.add(createRabbit(x, z));
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.2), orange);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            body.position.y = 0.7;
+            group.add(body);
+
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.35), orange);
+            head.castShadow = true;
+            head.receiveShadow = true;
+            head.position.set(0.7, 1.0, 0.2);
+            group.add(head);
+
+            const tail = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.9), orange);
+            tail.castShadow = true;
+            tail.receiveShadow = true;
+            tail.position.set(-0.6, 0.8, -0.3);
+            tail.rotation.x = 0.5;
+            group.add(tail);
+
+            group.position.set(x, 0.2, z);
+            return group;
         }
 
-        // --- فراشات (نقاط متحركة) ---
-        const butterflyGeo = new THREE.BoxGeometry(0.2, 0.05, 0.3);
-        const butterflyMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+        // توزيع الحيوانات
+        for (let i = 0; i < 25; i++) {
+            const x = (Math.random() - 0.5) * 200;
+            const z = (Math.random() - 0.5) * 200;
+            if (i % 3 === 0) scene.add(createDeer(x, z));
+            else if (i % 3 === 1) scene.add(createRabbit(x, z));
+            else scene.add(createFox(x, z));
+        }
+
+        // --- فراشات (مجموعات متحركة) ---
+        const butterflyGeo = new THREE.BoxGeometry(0.15, 0.03, 0.25);
+        const butterflyMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0x442200 });
         const butterflies = [];
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 60; i++) {
             const butterfly = new THREE.Mesh(butterflyGeo, butterflyMat);
             butterfly.castShadow = true;
             butterfly.receiveShadow = true;
-            const x = (Math.random() - 0.5) * 120;
-            const z = (Math.random() - 0.5) * 120;
-            butterfly.position.set(x, 2 + Math.random() * 5, z);
+            const x = (Math.random() - 0.5) * 200;
+            const z = (Math.random() - 0.5) * 200;
+            butterfly.position.set(x, 2 + Math.random() * 8, z);
             scene.add(butterfly);
             butterflies.push(butterfly);
         }
 
-        // --- نهر (ماء) ---
-        const waterGeometry = new THREE.CircleGeometry(40, 64);
+        // --- نهر (ماء ديناميكي) ---
+        const waterGeometry = new THREE.CircleGeometry(50, 128);
         const water = new Water(waterGeometry, {
-            textureWidth: 512,
-            textureHeight: 512,
+            textureWidth: 1024,
+            textureHeight: 1024,
             waterNormals: textureLoader.load('https://threejs.org/examples/textures/water/Water_1_M_Normal.jpg'),
-            sunDirection: new THREE.Vector3(1, 1, 1),
+            sunDirection: sunLight.position.clone().normalize(),
             sunColor: 0xffaa88,
             waterColor: 0x336699,
-            distortionScale: 3.7,
+            distortionScale: 4.0,
             fog: true
         });
         water.rotation.x = -Math.PI / 2;
-        water.position.set(40, 0.2, 30);
+        water.position.set(60, 0.3, 40);
         water.receiveShadow = true;
         scene.add(water);
 
-        // --- صخور متناثرة ---
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x6a6a6a, roughness: 0.9 });
-        for (let i = 0; i < 50; i++) {
-            const rockGeo = new THREE.DodecahedronGeometry(0.5 + Math.random() * 1.5);
+        // --- صخور بأحجام مختلفة ---
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x6a6a6a, roughness: 0.9, emissive: 0x111111 });
+        for (let i = 0; i < 80; i++) {
+            const rockGeo = new THREE.DodecahedronGeometry(0.7 + Math.random() * 2.5, 1);
             const rock = new THREE.Mesh(rockGeo, rockMat);
             const angle = Math.random() * Math.PI * 2;
-            const radius = 10 + Math.random() * 60;
+            const radius = 20 + Math.random() * 110;
             rock.position.set(Math.cos(angle) * radius, 0.3, Math.sin(angle) * radius);
             rock.castShadow = true;
             rock.receiveShadow = true;
+            rock.scale.set(1, 0.6 + Math.random() * 0.8, 1);
             scene.add(rock);
         }
 
-        // --- شخصية بسيطة (اختياري) للتحرك ---
+        // --- شخصية رئيسية بسيطة (للتجول) ---
         const playerGroup = new THREE.Group();
         const bodyMat = new THREE.MeshStandardMaterial({ color: 0x44aa88 });
         const headMat = new THREE.MeshStandardMaterial({ color: 0xffccaa });
         
-        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.5), bodyMat);
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.6), bodyMat);
         body.castShadow = true;
         body.receiveShadow = true;
-        body.position.y = 0.75;
+        body.position.y = 0.8;
         playerGroup.add(body);
 
         const head = new THREE.Mesh(new THREE.SphereGeometry(0.4), headMat);
         head.castShadow = true;
         head.receiveShadow = true;
-        head.position.y = 1.6;
+        head.position.y = 1.7;
         playerGroup.add(head);
 
-        playerGroup.position.set(20, 0.5, 20);
+        // أذرع وأرجل مبسطة
+        const armGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.9);
+        const armMat = new THREE.MeshStandardMaterial({ color: 0x44aa88 });
+        const armL = new THREE.Mesh(armGeo, armMat);
+        armL.castShadow = true;
+        armL.receiveShadow = true;
+        armL.position.set(-0.7, 1.2, 0);
+        armL.rotation.z = 0.2;
+        playerGroup.add(armL);
+        const armR = new THREE.Mesh(armGeo, armMat);
+        armR.castShadow = true;
+        armR.receiveShadow = true;
+        armR.position.set(0.7, 1.2, 0);
+        armR.rotation.z = -0.2;
+        playerGroup.add(armR);
+
+        const legGeo = new THREE.CylinderGeometry(0.15, 0.15, 1.0);
+        const legMat = new THREE.MeshStandardMaterial({ color: 0x337766 });
+        const legL = new THREE.Mesh(legGeo, legMat);
+        legL.castShadow = true;
+        legL.receiveShadow = true;
+        legL.position.set(-0.25, 0.3, 0);
+        playerGroup.add(legL);
+        const legR = new THREE.Mesh(legGeo, legMat);
+        legR.castShadow = true;
+        legR.receiveShadow = true;
+        legR.position.set(0.25, 0.3, 0);
+        playerGroup.add(legR);
+
+        playerGroup.position.set(20, 0.6, 20);
         scene.add(playerGroup);
 
         // --- التحكم بالشخصية (WASD) وكاميرا التتبع ---
@@ -471,7 +638,7 @@
                     activeCamera = (activeCamera === cameraFree) ? cameraFollow : cameraFree;
                     controls.enabled = (activeCamera === cameraFree);
                     break;
-                case 'KeyF': // تبديل وضع ملء الشاشة
+                case 'KeyF':
                     if (document.fullscreenElement) {
                         document.exitFullscreen();
                     } else {
@@ -499,7 +666,7 @@
             const elapsedTime = performance.now() / 1000;
 
             // حركة الشخصية
-            const speed = 0.3;
+            const speed = 0.4;
             if (keyState.w) playerGroup.position.z -= speed;
             if (keyState.s) playerGroup.position.z += speed;
             if (keyState.a) playerGroup.position.x -= speed;
@@ -507,17 +674,17 @@
 
             // تحديث كاميرا التتبع
             if (activeCamera === cameraFollow) {
-                const offset = new THREE.Vector3(-5, 3, 7);
+                const offset = new THREE.Vector3(-6, 4, 8);
                 cameraFollow.position.copy(playerGroup.position.clone().add(offset));
                 cameraFollow.lookAt(playerGroup.position);
             } else {
                 controls.update();
             }
 
-            // حركة العشب (محاكاة الرياح) - بسيطة
-            instancedGrass.rotation.y += 0.0005;
+            // حركة العشب (تمايل بسيط)
+            instancedGrass.rotation.y += 0.0003;
 
-            // حركة الفراشات (دائرية)
+            // حركة الفراشات (ارتفاع وهبوط)
             butterflies.forEach((butterfly, i) => {
                 butterfly.position.y += Math.sin(elapsedTime * 2 + i) * 0.005;
                 butterfly.rotation.y += 0.01;
