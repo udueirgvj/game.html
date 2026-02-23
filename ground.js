@@ -1,35 +1,40 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
+import * as THREE from 'three';
 
 export function createGround(scene) {
-
-    const textureLoader = new THREE.TextureLoader();
-
-    // تحميل صورة العشب
-    const grassTexture = textureLoader.load("grass.jpg");
-
-    // تكرار الصورة حتى لا تتمطط
-    grassTexture.wrapS = THREE.RepeatWrapping;
-    grassTexture.wrapT = THREE.RepeatWrapping;
-
-    // عدد التكرار (كلما زاد أصبحت أدق)
-    grassTexture.repeat.set(80, 80);
-
-    // جودة أعلى
-    grassTexture.anisotropy = 16;
-
-    const groundGeometry = new THREE.PlaneGeometry(2000, 2000);
-
-    const groundMaterial = new THREE.MeshStandardMaterial({
-        map: grassTexture
-    });
-
+    // أرضية خضراء
+    const groundGeometry = new THREE.CircleGeometry(40, 32);
+    const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x3a9e3a, side: THREE.DoubleSide });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-
-    // تدوير الأرض
     ground.rotation.x = -Math.PI / 2;
-
-    // استقبال الظل
+    ground.position.y = 0;
     ground.receiveShadow = true;
-
     scene.add(ground);
+
+    // شبكة مساعدة (اختيارية)
+    const gridHelper = new THREE.GridHelper(40, 20, 0xaaaaaa, 0x444444);
+    scene.add(gridHelper);
+
+    // إضافة بعض الأشجار البسيطة
+    for (let i = 0; i < 10; i++) {
+        const treeGroup = new THREE.Group();
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const leafMat = new THREE.MeshStandardMaterial({ color: 0x228822 });
+        
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 2), trunkMat);
+        trunk.castShadow = true;
+        trunk.receiveShadow = true;
+        trunk.position.y = 1;
+        treeGroup.add(trunk);
+        
+        const leaf = new THREE.Mesh(new THREE.ConeGeometry(1, 1.5), leafMat);
+        leaf.castShadow = true;
+        leaf.receiveShadow = true;
+        leaf.position.y = 2.5;
+        treeGroup.add(leaf);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 8 + Math.random() * 12;
+        treeGroup.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+        scene.add(treeGroup);
+    }
 }
