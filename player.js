@@ -1,66 +1,100 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createGround } from './ground.js';
+import { createSky } from './sky.js';
 
-export function createPlayer() {
-    const group = new THREE.Group();
-    
-    // الجسم
-    const bodyGeo = new THREE.BoxGeometry(0.8, 1.5, 0.8);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.5 });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.castShadow = true;
-    body.receiveShadow = true;
-    body.position.y = 0.75;
-    group.add(body);
-    
-    // الرأس
-    const headGeo = new THREE.SphereGeometry(0.4);
-    const headMat = new THREE.MeshStandardMaterial({ color: 0xffcc88 });
-    const head = new THREE.Mesh(headGeo, headMat);
-    head.castShadow = true;
-    head.receiveShadow = true;
-    head.position.y = 1.7;
-    group.add(head);
-    
-    // العينان
-    const eyeGeo = new THREE.SphereGeometry(0.1);
-    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-    const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-    eyeL.position.set(-0.2, 1.8, 0.35);
-    group.add(eyeL);
-    const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-    eyeR.position.set(0.2, 1.8, 0.35);
-    group.add(eyeR);
-    
-    // الذراعان
-    const armGeo = new THREE.BoxGeometry(0.2, 0.8, 0.2);
-    const armMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
-    const armL = new THREE.Mesh(armGeo, armMat);
-    armL.castShadow = true;
-    armL.receiveShadow = true;
-    armL.position.set(-0.6, 1.1, 0);
-    group.add(armL);
-    const armR = new THREE.Mesh(armGeo, armMat);
-    armR.castShadow = true;
-    armR.receiveShadow = true;
-    armR.position.set(0.6, 1.1, 0);
-    group.add(armR);
-    
-    // الأرجل
-    const legGeo = new THREE.BoxGeometry(0.2, 0.8, 0.2);
-    const legMat = new THREE.MeshStandardMaterial({ color: 0xaa7700 });
-    const legL = new THREE.Mesh(legGeo, legMat);
-    legL.castShadow = true;
-    legL.receiveShadow = true;
-    legL.position.set(-0.2, 0.4, 0);
-    group.add(legL);
-    const legR = new THREE.Mesh(legGeo, legMat);
-    legR.castShadow = true;
-    legR.receiveShadow = true;
-    legR.position.set(0.2, 0.4, 0);
-    group.add(legR);
-    
-    group.position.set(0, 1, 0);
-    group.castShadow = true;
-    group.receiveShadow = true;
-    return group;
+// --- إعداد المشهد والرندر ---
+const scene = new THREE.Scene();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+// --- إضافة العناصر من الملفات الأخرى ---
+createSky(scene);
+createGround(scene);
+
+// --- إنشاء شخصية بسيطة (مكعب يمثل اللاعب) ---
+const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
+const playerMaterial = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+const player = new THREE.Mesh(playerGeometry, playerMaterial);
+player.castShadow = true;
+player.receiveShadow = true;
+player.position.set(0, 1, 0);
+scene.add(player);
+
+// --- كاميرات ---
+const cameraFollow = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+cameraFollow.position.set(5, 3, 5);
+
+const cameraFree = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+cameraFree.position.set(10, 10, 10);
+
+let activeCamera = cameraFollow;
+const controls = new OrbitControls(cameraFree, renderer.domElement);
+controls.enableDamping = true;
+controls.enabled = false;
+
+// --- حالة الأزرار ---
+const keyState = { w: false, a: false, s: false, d: false };
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD' || e.code === 'KeyC') {
+        e.preventDefault();
+    }
+    switch(e.code) {
+        case 'KeyW': keyState.w = true; break;
+        case 'KeyA': keyState.a = true; break;
+        case 'KeyS': keyState.s = true; break;
+        case 'KeyD': keyState.d = true; break;
+        case 'KeyC':
+            activeCamera = (activeCamera === cameraFollow) ? cameraFree : cameraFollow;
+            controls.enabled = (activeCamera === cameraFree);
+            break;
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD') e.preventDefault();
+    switch(e.code) {
+        case 'KeyW': keyState.w = false; break;
+        case 'KeyA': keyState.a = false; break;
+        case 'KeyS': keyState.s = false; break;
+        case 'KeyD': keyState.d = false; break;
+    }
+});
+
+// --- حلقة اللعبة ---
+function animate() {
+    // تحريك الشخصية
+    const speed = 0.1;
+    if (keyState.w) player.position.z -= speed;
+    if (keyState.s) player.position.z += speed;
+    if (keyState.a) player.position.x -= speed;
+    if (keyState.d) player.position.x += speed;
+
+    // تحديث كاميرا التتبع
+    if (activeCamera === cameraFollow) {
+        const offset = new THREE.Vector3(-3, 2, 3);
+        cameraFollow.position.copy(player.position.clone().add(offset));
+        cameraFollow.lookAt(player.position);
+    } else {
+        controls.update();
+    }
+
+    renderer.render(scene, activeCamera);
+    requestAnimationFrame(animate);
 }
+
+animate();
+
+// --- تغيير حجم النافذة ---
+window.addEventListener('resize', () => {
+    cameraFollow.aspect = window.innerWidth / window.innerHeight;
+    cameraFollow.updateProjectionMatrix();
+    cameraFree.aspect = window.innerWidth / window.innerHeight;
+    cameraFree.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+console.log('✅ اللعبة تعمل من ملفات منفصلة!');
