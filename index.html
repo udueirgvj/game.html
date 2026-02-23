@@ -2,24 +2,38 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>لعبة ثلاثية الأبعاد</title>
+    <title>لعبة ثلاثية الأبعاد - نسخة مبسطة</title>
     <style>
-        body { margin: 0; overflow: hidden; }
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         #info {
             position: absolute;
             top: 20px;
             left: 20px;
             color: white;
             background: rgba(0,0,0,0.7);
-            padding: 10px;
-            font-family: Arial;
+            padding: 10px 20px;
+            border-radius: 5px;
             z-index: 100;
+            user-select: none;
+            pointer-events: none;
+        }
+        #error-message {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: red;
+            background: black;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div id="info">استخدم WASD للتحرك | اضغط C لتبديل الكاميرا</div>
-    <!-- استيراد المكتبات -->
+    <div id="error-message"></div>
+
+    <!-- استيراد Three.js مباشرة من CDN -->
     <script type="importmap">
         {
             "imports": {
@@ -28,6 +42,260 @@
             }
         }
     </script>
-    <script type="module" src="game.js"></script>
+
+    <script type="module">
+        // محاولة التقاط الأخطاء وعرضها على الشاشة
+        window.addEventListener('error', (e) => {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = 'خطأ: ' + e.message;
+            console.error(e);
+        });
+
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- 1. التهيئة الأساسية ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // لون سماوي
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 5, 10);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // --- 2. إضاءة واضحة ---
+        // إضاءة محيطة
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+
+        // إضاءة اتجاهية (شمس)
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+        sunLight.position.set(10, 20, 5);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 1024;
+        sunLight.shadow.mapSize.height = 1024;
+        const d = 15;
+        sunLight.shadow.camera.left = -d;
+        sunLight.shadow.camera.right = d;
+        sunLight.shadow.camera.top = d;
+        sunLight.shadow.camera.bottom = -d;
+        sunLight.shadow.camera.near = 1;
+        sunLight.shadow.camera.far = 25;
+        scene.add(sunLight);
+
+        // إضاءة إضافية من الخلف
+        const backLight = new THREE.DirectionalLight(0x446688, 0.5);
+        backLight.position.set(-5, 5, -10);
+        scene.add(backLight);
+
+        // --- 3. أرضية واضحة (مع شبكة مساعدة) ---
+        const gridHelper = new THREE.GridHelper(20, 20, 0xaaaaaa, 0x444444);
+        scene.add(gridHelper);
+
+        // أرضية خضراء
+        const groundGeo = new THREE.PlaneGeometry(20, 20);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x3a9e3a, side: THREE.DoubleSide });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = Math.PI / 2;
+        ground.position.y = 0;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // --- 4. شخصية بسيطة (مكعب) ---
+        const playerGeo = new THREE.BoxGeometry(1, 2, 1);
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+        const player = new THREE.Mesh(playerGeo, playerMat);
+        player.castShadow = true;
+        player.receiveShadow = true;
+        player.position.set(0, 1, 0);
+        scene.add(player);
+
+        // --- 5. بعض الأشياء في المشهد (شجرة بسيطة) ---
+        function createSimpleTree(x, z) {
+            const group = new THREE.Group();
+            
+            // جذع
+            const trunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 2);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.castShadow = true;
+            trunk.receiveShadow = true;
+            trunk.position.y = 1;
+            group.add(trunk);
+            
+            // أوراق (كرات خضراء)
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x228822 });
+            const leaf1 = new THREE.Mesh(new THREE.SphereGeometry(0.8), leafMat);
+            leaf1.castShadow = true;
+            leaf1.receiveShadow = true;
+            leaf1.position.set(0, 2.2, 0);
+            group.add(leaf1);
+            
+            const leaf2 = new THREE.Mesh(new THREE.SphereGeometry(0.6), leafMat);
+            leaf2.castShadow = true;
+            leaf2.receiveShadow = true;
+            leaf2.position.set(0.5, 1.8, 0.4);
+            group.add(leaf2);
+            
+            const leaf3 = new THREE.Mesh(new THREE.SphereGeometry(0.6), leafMat);
+            leaf3.castShadow = true;
+            leaf3.receiveShadow = true;
+            leaf3.position.set(-0.5, 1.8, -0.3);
+            group.add(leaf3);
+            
+            group.position.set(x, 0, z);
+            return group;
+        }
+
+        // إضافة بعض الأشجار حول اللاعب
+        scene.add(createSimpleTree(3, 3));
+        scene.add(createSimpleTree(-3, -2));
+        scene.add(createSimpleTree(4, -3));
+        scene.add(createSimpleTree(-4, 4));
+
+        // --- 6. حيوان بسيط (كرة بيضاء بأذنين) ---
+        function createSimpleRabbit(x, z) {
+            const group = new THREE.Group();
+            const white = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            
+            // جسم
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.5), white);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            body.position.y = 0.5;
+            group.add(body);
+            
+            // رأس
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), white);
+            head.castShadow = true;
+            head.receiveShadow = true;
+            head.position.set(0, 0.9, 0.4);
+            group.add(head);
+            
+            // أذنان
+            const earMat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+            const earGeo = new THREE.ConeGeometry(0.15, 0.5);
+            const earL = new THREE.Mesh(earGeo, earMat);
+            earL.castShadow = true;
+            earL.receiveShadow = true;
+            earL.position.set(-0.2, 1.2, 0.3);
+            group.add(earL);
+            
+            const earR = new THREE.Mesh(earGeo, earMat);
+            earR.castShadow = true;
+            earR.receiveShadow = true;
+            earR.position.set(0.2, 1.2, 0.3);
+            group.add(earR);
+            
+            group.position.set(x, 0, z);
+            return group;
+        }
+
+        const rabbit1 = createSimpleRabbit(2, -2);
+        const rabbit2 = createSimpleRabbit(-2, 3);
+        scene.add(rabbit1);
+        scene.add(rabbit2);
+
+        // --- 7. نظام الكاميرات ---
+        const cameraFollow = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        cameraFollow.position.set(5, 3, 5);
+        
+        const cameraFree = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        cameraFree.position.set(10, 10, 10);
+        
+        let activeCamera = cameraFollow; // نبدأ بكاميرا التتبع
+        
+        const controls = new OrbitControls(cameraFree, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enabled = false; // معطلة في البداية
+
+        // --- 8. التحكم بالمفاتيح ---
+        const keyState = { w: false, a: false, s: false, d: false };
+
+        window.addEventListener('keydown', (e) => {
+            // منع التمرير عند الضغط على WASD أو C
+            if (e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD' || e.code === 'KeyC') {
+                e.preventDefault();
+            }
+            
+            console.log('ضغطت على: ' + e.code); // للتأكد من وصول الحدث
+            
+            switch(e.code) {
+                case 'KeyW': keyState.w = true; break;
+                case 'KeyA': keyState.a = true; break;
+                case 'KeyS': keyState.s = true; break;
+                case 'KeyD': keyState.d = true; break;
+                case 'KeyC': 
+                    // تبديل الكاميرا
+                    activeCamera = (activeCamera === cameraFollow) ? cameraFree : cameraFollow;
+                    controls.enabled = (activeCamera === cameraFree);
+                    console.log('الكاميرا الآن: ' + (activeCamera === cameraFollow ? 'تتبع' : 'حرة'));
+                    break;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD') {
+                e.preventDefault();
+            }
+            switch(e.code) {
+                case 'KeyW': keyState.w = false; break;
+                case 'KeyA': keyState.a = false; break;
+                case 'KeyS': keyState.s = false; break;
+                case 'KeyD': keyState.d = false; break;
+            }
+        });
+
+        // --- 9. حلقة اللعبة ---
+        function animate() {
+            // تحريك الشخصية
+            const speed = 0.1;
+            if (keyState.w) player.position.z -= speed;
+            if (keyState.s) player.position.z += speed;
+            if (keyState.a) player.position.x -= speed;
+            if (keyState.d) player.position.x += speed;
+            
+            // تحديث كاميرا التتبع
+            if (activeCamera === cameraFollow) {
+                // وضع الكاميرا خلف الشخصية
+                const offset = new THREE.Vector3(-3, 2, 3); // خلف الشخصية
+                cameraFollow.position.copy(player.position.clone().add(offset));
+                cameraFollow.lookAt(player.position);
+            } else {
+                controls.update(); // تحديث الكاميرا الحرة
+            }
+            
+            // تحريك الأرانب (حركة بسيطة للعرض)
+            const time = Date.now() * 0.001;
+            rabbit1.position.y = Math.sin(time * 2) * 0.2;
+            rabbit2.position.y = Math.cos(time * 2.5) * 0.2;
+            
+            // الرسم بالكاميرا النشطة
+            renderer.render(scene, activeCamera);
+            
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // --- 10. التعامل مع تغيير حجم النافذة ---
+        window.addEventListener('resize', () => {
+            cameraFollow.aspect = window.innerWidth / window.innerHeight;
+            cameraFollow.updateProjectionMatrix();
+            cameraFree.aspect = window.innerWidth / window.innerHeight;
+            cameraFree.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // رسالة تأكيد في الكونسول
+        console.log('اللعبة بدأت!');
+    </script>
 </body>
 </html>
